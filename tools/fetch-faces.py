@@ -63,6 +63,9 @@ ROOT = os.path.join(HERE, "..")
 OUT = os.path.join(ROOT, "site", "avatars")
 FACES = os.path.join(ROOT, "src", "data", "faces.json")
 
+# Wikimedia's user-agent policy asks for a contact, and a URL is one. It does NOT
+# get an email address: this repository is public, so an address here is
+# published to the world, and the site is a better contact anyway.
 UA = "hominin-atlas/1.0 (https://hominin-atlas.nodejavascript.com)"
 SIZE = 160
 

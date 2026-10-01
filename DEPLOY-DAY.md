@@ -4,7 +4,7 @@
 that a hostname exists only once it is deployed. It is the record now: what the
 deploy took, what went wrong, and what is still outstanding.**
 
-The live site: **https://hinomin-atlas.nodejavascript.com/**
+The live site: **https://hominin-atlas.nodejavascript.com/**
 
 ---
 
@@ -39,7 +39,7 @@ Then `gh repo create nodejavascript/hominin-atlas --public --source . --push`.
 
 ## 2 · DNS
 
-A proxied `A` record for `hinomin-atlas` → `178.128.225.32` (the `dvs-sites` droplet),
+A proxied `A` record for `hominin-atlas` → `178.128.225.32` (the `dvs-sites` droplet),
 TTL auto, created through the DNS-scoped token. **No `www` record, and none was
 created** — part 7c, checked after the fact with a query for it.
 
@@ -65,7 +65,7 @@ needed for that and **nothing was added to `robots.txt`**.
 
 ## 4 · Analytics — the property, and the line in the page
 
-* Property **557004013** `hinomin-atlas.nodejavascript.com`, in the **`mcp` account**,
+* Property **557004013** `hominin-atlas.nodejavascript.com`, in the **`mcp` account**,
   `America/Toronto` and **CAD** — matching all 26 properties already there rather than
   the API's USD default.
 * Stream **15939054405** → measurement id **`G-DSBD2WDQ43`**, filled into
@@ -110,21 +110,43 @@ already knows (`three.js`).
 
 ---
 
-## 🔴 The two things that went wrong, because both will happen to the next site
+## 🔴 The three things that went wrong, because all three will happen to the next site
 
-1. **A DNS negative cache blocked the certificate for half an hour, and the record was
-   never wrong.** Caddy asked Let's Encrypt **thirteen seconds** after the record was
-   created; Let's Encrypt's resolver got `NXDOMAIN` and cached it for up to
-   **Cloudflare's `SOA MINIMUM`, which is 1800 seconds**. So every retry failed with
-   *"DNS problem: NXDOMAIN looking up A"* while `dig` from this machine answered
-   `172.64.80.1` the whole time. **Create the record, then expect to wait — or accept
-   the half hour. The record is not the fault and re-creating it will not help.**
+1. 🔴 **THE ONE THAT COST FOUR HOURS: A TYPO IN THE DNS RECORD, AND I NEVER READ THE NAME
+   CADDY WAS ACTUALLY ASKING FOR.** The site is **hominin**-atlas — *hominin*, the tribe.
+   The record was created as **hinomin**-atlas. So Caddy asked Let's Encrypt for a
+   certificate for a hostname that had no record, and Let's Encrypt answered `NXDOMAIN`
+   — **correctly, every time, for four hours.**
 
-2. **A Caddy reload cancels an in-flight certificate job.** Deploying the apex runs
+   **And the diagnosis was thorough and useless, because it was aimed at the wrong name.**
+   I checked that the record resolved: both Cloudflare nameservers, four public resolvers
+   and Google's DNS-over-HTTPS all returned `172.64.80.1` — **for `hinomin-atlas`.** I
+   concluded that Let's Encrypt was broken, and went looking for an issuer that did not
+   depend on it. **The record was fine. It was a record for nothing.**
+
+   **The fix took one command — create the record under the right name — and the
+   certificate arrived nine seconds later.** The lesson is not "spell carefully". It is:
+   **read the name out of the thing that is FAILING, not out of your own intention.**
+   Caddy's log printed `hominin-atlas` on every line. The site's title, its canonical URL,
+   its `package.json` and its directory all said `hominin-atlas`. **The only place the
+   wrong spelling appeared was the request I made myself.**
+
+2. **A DNS negative cache can block a certificate while the record is perfectly correct.**
+   Caddy asked Let's Encrypt **thirteen seconds** after a record was created; Let's
+   Encrypt's resolver got `NXDOMAIN` and may hold it for up to **Cloudflare's `SOA
+   MINIMUM`, which is 1800 seconds.** So create the record and let the certificate job
+   have its time. *(This is real, but it was NOT what happened here — see 1. It is worth
+   knowing, and it is the wrong thing to reach for first.)*
+
+3. **A Caddy reload cancels an in-flight certificate job.** Deploying the apex runs
    `systemctl reload caddy` on this same droplet, and it produced *"obtaining
    certificate: context canceled"* for this site. **A reload takes the running TLS job
    with it**, so a deploy anywhere on this box can cancel a certificate that was
    mid-flight for somewhere else. **Sequence the two, or accept the restart.**
+
+**All three are written down because the job of this file is to stop the next agent
+repeating them.** The site works; the four hours were the cost of checking my own intent
+instead of the artefact.
 
 ---
 

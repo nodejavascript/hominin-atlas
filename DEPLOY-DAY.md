@@ -32,6 +32,18 @@ why a URL is the contact and not an address; then the history was rewritten with
 form `vision-ml-demo` already uses. **`SWEEP OK` afterwards, and the sweep is what
 proves it, not the intention.**
 
+> 🔴 **AND IT CAME BACK — which is the lesson worth keeping.** The rewrite fixes HISTORY; the git
+> config writes the NEXT commit. **`2d8746c` and `3591982` were authored
+> `the owner's git identity`** — this machine's user identity — so the address was back in
+> the published history **two commits after it had been purged from every earlier one**, and the
+> same two addresses were sitting in `DEPLOY-DAY.md` as well, in the paragraph describing the leak.
+> **The sweep caught it a second time, which is the sweep earning its keep.**
+>
+> The fix is `git config user.email` **set in the REPOSITORY**: a public repo's commits are then
+> clean by construction rather than by remembering. **Set it before the next commit, not after the
+> next sweep** — and the history was rewritten a second time, for the same reason the first one was
+> needed: an edit today does not remove a line from the commit that introduced it.
+
 Then `gh repo create nodejavascript/hominin-atlas --public --source . --push`.
 
 > ⚠️ **The push failed first, and the reason is worth keeping:** *"Permission to
@@ -95,13 +107,34 @@ no request to anybody else.
 **24 → 25**, and the closed stack vocabulary, which gained exactly one word a reader
 already knows (`three.js`).
 
-## 6 · What is still outstanding
+## 6 · What the compliance check found, and what is outstanding
 
-* **Search Console** — both property kinds and the sitemap submitted to both. The
-  `sc-domain:` property verifies over DNS and could be done at once; the URL-prefix
-  property verifies over `ANALYTICS`, which needs the live page.
-* **The registers** — `~/.nodejs_theme_register.py`, `~/.nodejs_compliance.py --save`,
-  `~/.nodejs_host_property_check.py`, `~/.seo_audit.py`.
+**Two faults, both found by `~/.nodejs_compliance.py` on the day the site went live, and both fixed
+the same day.**
+
+* **part 4b — the repository link's LABEL was yellow.** The site's anchors take `--accent-soft`, an
+  amber, so the label sat beside the star in a yellow very close to it, and the rule is that **only
+  the star may be yellow**. **This is a fact about PAINT, not about source:** the colour lands on the
+  element from a rule written somewhere else, so nothing reading the markup can see it — it was
+  measured from the rendered page, and it is measured there on every run since. The label now takes
+  the footer's own colour — `rgb(246, 239, 232)` against the star's `rgb(251, 191, 36)`.
+* **part 6 — there was no live check.** Fixed by **`tools/live-check.mjs`** (`npm run test:live`, 19
+  checks): the deployed host is asked for the 200, the `no-store` shell, the title, the icon set and
+  the order it is declared in, `robots.txt`, the sitemap, the absence of `www`, the rendered
+  part-4b colours, and no third-party request before an answer. It compares the **served** `app.js`
+  and `styles.css` with the local build, so **a stale deploy fails there rather than being found by
+  a visitor.**
+
+**Done, and no longer outstanding:**
+
+* **Search Console** — both property kinds added the day the site went live, and the sitemap
+  submitted to both. The URL-prefix property verified over `ANALYTICS`; the `sc-domain:` property
+  over Cloudflare DNS.
+* **The registers** — the theme register, the host/property check and the SEO audit all ran against
+  the live host. **The theme colour changed because of that run:** `#ea580c` was already
+  `recallradar`'s, so it became `#ca8a04`, and the icons were redrawn with it — the mark wears the
+  site's own colour, so a recolour without an icon redraw leaves the tab and the page disagreeing.
+  All four dimensions — colour, background, abstract, Analytics id — are now this site's own.
 * **Rollbar — DECIDED AGAINST, deliberately, and this is the reason:** the site ships
   no third-party script at all, and `test/e2e.test.js` counts the requests a visit
   makes and asserts there are none to Google before an answer. Adding an error

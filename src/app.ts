@@ -16,6 +16,7 @@ import {
   atlas,
   CONTACT_KIND_LABEL,
   CONFIDENCE_LABEL,
+  faceOf,
   formatSpan,
   formatYears,
   GLACIAL_RECORD_STARTS,
@@ -33,6 +34,7 @@ import {
 } from './atlas';
 import { createFlatMap } from './flatmap';
 import { createGlobe } from './globe';
+import { renderMixing } from './mixing';
 import { contactColour } from './palette';
 import type { Contact, MapViewApi, Presence, Selection, Species } from './types';
 
@@ -402,6 +404,17 @@ function contactRow(c: Contact): HTMLButtonElement {
 
 for (const c of atlas.contacts) contactsHost?.appendChild(contactRow(c));
 
+// The mixing diagram is drawn from the same contacts the list above is, so the
+// two cannot say different things about who met whom.
+const vennHost = el<HTMLDivElement>('venn');
+if (vennHost) {
+  renderMixing(vennHost, (c) => {
+    map.focusOn(c.lat, c.lon);
+    showSelection({ kind: 'contact', contact: c });
+    track('contact_open', { contact: c.id, kind: c.kind, from: 'venn' });
+  });
+}
+
 function syncContacts(): void {
   for (const node of contactsHost?.querySelectorAll<HTMLButtonElement>('.contact') ?? []) {
     const c = atlas.contacts.find((x) => x.id === node.dataset.contact);
@@ -577,12 +590,64 @@ function showSpecies(s: Species): void {
     `<p class="panel-sub">${esc(formatSpan(s.from, s.to))}</p>` +
     `</div>` +
     `<p>${esc(s.blurb)}</p>` +
+    faceHtml(s) +
     `<dl>` +
     `<dt>Status</dt><dd>${esc(statusWord(s.status))}</dd>` +
     `<dt>Localities on this map</dt><dd>${places.length}</dd>` +
     `</dl>` +
     `<h4>Sources for the dates</h4><ul class="refs">${sourcesHtml(s.sources)}</ul>`;
   wirePanelClose();
+}
+
+/**
+ * The species' picture, with the sentence that says where it came from.
+ *
+ * A photograph on a page whose whole argument is "a claim is only as good as its
+ * source" cannot arrive uncredited. So every picture is shown with its artist,
+ * its licence as a link, the file it is on Commons, and a plain statement of what
+ * the picture actually is — which matters most for the reconstructions, because
+ * those are somebody's reading of a few bones and not a photograph of a face.
+ */
+function faceHtml(s: Species): string {
+  const f = faceOf(s.id);
+  if (!f) {
+    return (
+      `<div class="noface"><img src="./avatars/${esc(s.id)}.png" alt="" width="84" height="84">` +
+      `<p>${esc(NO_FACE_REASON[s.id] ?? 'No free picture of this species exists. The mark beside its name is the only drawing on this page.')}</p></div>`
+    );
+  }
+  const licence = f.licenceUrl
+    ? `<a href="${esc(f.licenceUrl)}" rel="noopener">${esc(f.licence)}</a>`
+    : esc(f.licence);
+  return (
+    `<figure class="face">` +
+    `<img src="${esc(f.file)}" alt="${esc(s.name)} — ${esc(f.shows)}" width="168" height="168">` +
+    `<figcaption>` +
+    `<b>${esc(f.shows)}</b>` +
+    `<span>${esc(f.artist)} · ${licence} · ` +
+    `<a href="${esc(f.source)}" rel="noopener">the file on Commons</a></span>` +
+    `<span class="face-why">${esc(sentence(f.why))}</span>` +
+    `</figcaption>` +
+    `</figure>`
+  );
+}
+
+/**
+ * Why these two have no picture. Each is a different fact and neither is an
+ * omission, so neither gets a generic excuse.
+ */
+const NO_FACE_REASON: Record<string, string> = {
+  homo_early:
+    'This is not one species. "Early Homo" is where fossils that cannot be assigned to a named species are put, so there is no single face to show — only the faces of the species they turn out to belong to.',
+  ghost_archaic_wa:
+    'This population has never been found. It is known from a statistical signal in the genomes of living West Africans and from no fossil at all, so there is nothing to photograph.',
+};
+
+/** A reason kept in the data as a clause, shown on the page as a sentence. */
+function sentence(text: string): string {
+  const t = text.trim();
+  const capped = t.charAt(0).toUpperCase() + t.slice(1);
+  return /[.!?]$/.test(capped) ? capped : `${capped}.`;
 }
 
 function showSelection(selection: Selection): void {
@@ -682,6 +747,26 @@ if (sourceList) {
       if (!s) return '';
       const body = esc(s.cite);
       return `<li>${s.url ? `<a href="${esc(s.url)}" rel="noopener">${body}</a>` : body}</li>`;
+    })
+    .join('');
+}
+
+// Every picture on the page, with its licence, in one place. A reader should not
+// have to open each species to find out where a photograph came from.
+const faceList = el<HTMLUListElement>('faceList');
+if (faceList) {
+  faceList.innerHTML = [...atlas.faces]
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((f) => {
+      const s = atlas.speciesById.get(f.id);
+      const licence = f.licenceUrl
+        ? `<a href="${esc(f.licenceUrl)}" rel="noopener">${esc(f.licence)}</a>`
+        : esc(f.licence);
+      return (
+        `<li><b>${esc(s?.name ?? f.id)}</b> — ${esc(f.shows)} ` +
+        `${esc(f.artist)} · ${licence} · ` +
+        `<a href="${esc(f.source)}" rel="noopener">Commons</a></li>`
+      );
     })
     .join('');
 }

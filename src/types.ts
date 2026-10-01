@@ -27,6 +27,27 @@ export interface Species {
   sources: string[];
 }
 
+export interface Face {
+  /** The species this picture is of. */
+  id: string;
+  /** Where the picture is served from, relative to the page. */
+  file: string;
+  /** The article whose lead image this is, where it is one. */
+  article: string;
+  /** The file on Commons — the thing a licence attaches to. */
+  file_on_commons: string;
+  artist: string;
+  licence: string;
+  licenceUrl: string;
+  /** The Commons file page, where the licence can be read in full. */
+  source: string;
+  /** What the picture actually is. */
+  shows: string;
+  /** Where it was found, or why it and not another. */
+  found: string;
+  why: string;
+}
+
 export interface Presence {
   id: string;
   s: string;
@@ -115,5 +136,8 @@ export interface Atlas {
   routes: Route[];
   contacts: Contact[];
   sources: Map<string, Source>;
+  /** The pictures, for the species that have one. See Face. */
+  faces: Face[];
   speciesById: Map<string, Species>;
+  faceById: Map<string, Face>;
 }

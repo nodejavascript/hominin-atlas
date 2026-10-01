@@ -13,7 +13,8 @@ import presencesJson from './data/presences.json';
 import routesJson from './data/routes.json';
 import contactsJson from './data/contacts.json';
 import sourcesJson from './data/sources.json';
-import type { Atlas, Contact, Presence, Route, Source, Species } from './types';
+import facesJson from './data/faces.json';
+import type { Atlas, Contact, Face, Presence, Route, Source, Species } from './types';
 
 export const atlas: Atlas = (() => {
   const species = speciesJson.species as unknown as Species[];
@@ -23,13 +24,16 @@ export const atlas: Atlas = (() => {
   const sources = new Map<string, Source>(
     (sourcesJson.sources as unknown as Source[]).map((s) => [s.key, s]),
   );
+  const faces = facesJson.faces as unknown as Face[];
   return {
     species,
     presences,
     routes,
     contacts,
     sources,
+    faces,
     speciesById: new Map(species.map((s) => [s.id, s])),
+    faceById: new Map(faces.map((f) => [f.id, f])),
   };
 })();
 
@@ -265,9 +269,21 @@ export function nickname(s: Species): string {
   return s.common === '\u2014' ? '' : s.common;
 }
 
-/** Where a species' avatar is served from. Drawn by tools/make-avatars.py. */
+/**
+ * The picture of a species, where one exists.
+ *
+ * Not every species has one, and the two that do not are the two with no
+ * article and no fossil — the early undifferentiated *Homo* and the West
+ * African ghost population. They keep the drawn mark, and the page says why
+ * rather than borrowing a face from a species that is not them.
+ */
+export function faceOf(id: string): Face | undefined {
+  return atlas.faceById.get(id);
+}
+
+/** Where a species' avatar is served from: its picture, or the drawn mark. */
 export function speciesAvatar(id: string): string {
-  return `./avatars/${id}.png`;
+  return faceOf(id)?.file ?? `./avatars/${id}.png`;
 }
 
 // ── display helpers ───────────────────────────────────────────────────────────
@@ -327,4 +343,4 @@ export function referencedSourceKeys(): Set<string> {
   return keys;
 }
 
-export type { Atlas, Contact, Presence, Route, Source, Species };
+export type { Atlas, Contact, Face, Presence, Route, Source, Species };

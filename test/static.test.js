@@ -269,13 +269,31 @@ test('the nickname is printed beside the name, never instead of it', () => {
   assert.ok(bracketed.length >= 3, `only ${bracketed.length} places bracket the nickname`);
 });
 
-test('every species has an avatar, drawn from its own record', () => {
+test('every species has a picture, or a drawn mark and a reason', () => {
   const species = JSON.parse(readFileSync(join(root, 'src', 'data', 'species.json'), 'utf8')).species;
+  const faces = JSON.parse(readFileSync(join(root, 'src', 'data', 'faces.json'), 'utf8')).faces;
+  const pictured = new Set(faces.map((f) => f.id));
+
   for (const s of species) {
-    const file = join(root, 'site', 'avatars', `${s.id}.png`);
-    assert.ok(existsSync(file), `there is no avatar for ${s.name}`);
-    assert.ok(statSync(file).size > 200, `the avatar for ${s.name} is empty`);
+    if (pictured.has(s.id)) {
+      const file = join(root, 'site', 'avatars', `${s.id}.jpg`);
+      assert.ok(existsSync(file), `${s.name} is credited with a picture that is not on disk`);
+      assert.ok(statSync(file).size > 900, `the picture of ${s.name} is empty`);
+      continue;
+    }
+    const mark = join(root, 'site', 'avatars', `${s.id}.png`);
+    assert.ok(existsSync(mark), `there is no avatar at all for ${s.name}`);
+    assert.ok(statSync(mark).size > 200, `the mark for ${s.name} is empty`);
   }
+
+  // A species may only be without a picture if there is no article to take one
+  // from — the two that are known from a statistical signal rather than a fossil.
+  const noPicture = species.filter((s) => !pictured.has(s.id)).map((s) => s.id).sort();
+  assert.deepEqual(
+    noPicture,
+    ['ghost_archaic_wa', 'homo_early'],
+    'a species has appeared with no picture and no stated reason',
+  );
 });
 
 test('the bundle was built and is not a stub', () => {

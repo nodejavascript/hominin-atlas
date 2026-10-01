@@ -61,25 +61,70 @@ export function loadLandPolygons(): Poly[] {
   return out;
 }
 
+/**
+ * Split a ring at the antimeridian into the runs that do not cross it.
+ *
+ * Natural Earth stores a coastline that crosses 180° as ONE ring that jumps from
+ * +180 to -180. Drawn literally, that jump is a straight line across the whole
+ * map, and the even-odd fill of the ring turns it into a band of land over the
+ * Arctic — which the globe then wraps into rings round its north pole. Wrangel
+ * Island, which genuinely straddles the line, was drawn as a strip of land right
+ * across the world.
+ *
+ * Split into runs, each run's two ends sit ON the seam, so closing it draws a
+ * short line along the map edge instead of a long one across it. Drawing every
+ * run three times, at 0 and ±360, puts the part that ran off one edge back on the
+ * other — the trick the glacial shelf has always used, now applied to the land.
+ */
+function splitRing(ring: Ring): Ring[] {
+  const runs: Ring[] = [];
+  let run: Ring = [];
+  for (let i = 0; i < ring.length; i++) {
+    const point = ring[i]!;
+    if (i > 0 && Math.abs(point[0] - ring[i - 1]![0]) > 180) {
+      if (run.length > 1) runs.push(run);
+      run = [];
+    }
+    run.push(point);
+  }
+  if (run.length > 1) runs.push(run);
+  return runs;
+}
+
+/** A ring with no area is a line, and a line stroked across the map is a rule. */
+function hasArea(ring: Ring): boolean {
+  if (ring.length < 4) return false;
+  let twice = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    twice += (ring[j]![0] + ring[i]![0]) * (ring[j]![1] - ring[i]![1]);
+  }
+  return Math.abs(twice / 2) > 1e-6;
+}
+
 function drawLand(ctx: CanvasRenderingContext2D, polygons: Poly[], w: number, h: number): void {
   ctx.fillStyle = LAND;
-  ctx.beginPath();
-  for (const polygon of polygons) {
-    for (const ring of polygon) {
-      if (ring.length < 3) continue;
-      const first = ring[0]!;
-      ctx.moveTo(lonToX(first[0], w), latToY(first[1], h));
-      for (let i = 1; i < ring.length; i++) {
-        const pt = ring[i]!;
-        ctx.lineTo(lonToX(pt[0], w), latToY(pt[1], h));
-      }
-      ctx.closePath();
-    }
-  }
-  ctx.fill('evenodd');
   ctx.strokeStyle = LAND_EDGE;
   ctx.lineWidth = 1.1;
-  ctx.stroke();
+  for (const offset of [0, -360, 360]) {
+    ctx.beginPath();
+    for (const polygon of polygons) {
+      for (const ring of polygon) {
+        if (!hasArea(ring)) continue;
+        for (const run of splitRing(ring)) {
+          if (run.length < 3) continue;
+          const first = run[0]!;
+          ctx.moveTo(lonToX(first[0] + offset, w), latToY(first[1], h));
+          for (let i = 1; i < run.length; i++) {
+            const pt = run[i]!;
+            ctx.lineTo(lonToX(pt[0] + offset, w), latToY(pt[1], h));
+          }
+          ctx.closePath();
+        }
+      }
+    }
+    ctx.fill('evenodd');
+    ctx.stroke();
+  }
 }
 
 function drawGraticule(ctx: CanvasRenderingContext2D, w: number, h: number): void {

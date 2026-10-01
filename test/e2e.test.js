@@ -471,6 +471,46 @@ test('the species chart opens a species and the legend controls the map', async 
   await sleep(200);
 });
 
+test("a species' picture is shown with the sentence that says where it came from", async () => {
+  await page.goto(BASE, { waitUntil: 'load' });
+  await sleep(900);
+
+  // The species with a picture.
+  await page.click('#bars .bar[title^="Homo neanderthalensis"]');
+  await sleep(250);
+  const figure = page.locator('#panel figure.face');
+  assert.equal(await figure.count(), 1, 'the species panel shows no picture');
+  const shot = figure.locator('img');
+  assert.equal(await shot.getAttribute('src'), './avatars/neanderthalensis.jpg', 'the panel shows the drawn mark, not the picture');
+  assert.equal(await shot.evaluate((el) => el.naturalWidth > 0), true, 'the picture did not load');
+  assert.match(await shot.getAttribute('alt'), /Homo neanderthalensis/, 'the picture has no alt text');
+
+  // And the credit, which is not a footnote: the artist, the licence as a link,
+  // and the file on Commons.
+  const caption = await figure.locator('figcaption').innerText();
+  assert.ok(caption.trim().length > 30, `the credit is too thin: ${caption}`);
+  assert.ok(
+    (await figure.locator('a[href*="commons.wikimedia.org/wiki/File:"]').count()) >= 1,
+    'the picture is not linked to the file it came from',
+  );
+  await page.click('.panel-close');
+  await sleep(200);
+
+  // The species with no picture says so instead of borrowing one.
+  await page.click('#bars .bar[title^="Archaic West African ghost"]');
+  await sleep(250);
+  assert.equal(await page.locator('#panel .noface').count(), 1, 'a species with no picture does not say why');
+  // The species explains itself in its own words: one is not a species, the other
+  // has never been found. Either answer is fine; silence is not.
+  assert.match(
+    await page.locator('#panel .noface').innerText(),
+    /not one species|never been found/i,
+    'the panel does not explain the missing picture',
+  );
+  await page.click('.panel-close');
+  await sleep(200);
+});
+
 test('a species can be switched off the map, and back on', async () => {
   await page.goto(`${BASE}?at=45000`, { waitUntil: 'load' });
   await sleep(900);
@@ -705,7 +745,7 @@ test('hovering a dot says which hominin it is', async () => {
     loaded: el.querySelector('.hover-avatar').naturalWidth > 0,
     text: el.innerText,
   }));
-  assert.match(state.src, /^\.\/avatars\/[a-z_]+\.png$/, `the avatar is not a species avatar: ${state.src}`);
+  assert.match(state.src, /^\.\/avatars\/[a-z_]+\.(png|jpg)$/, `the avatar is not a species avatar: ${state.src}`);
   assert.equal(state.loaded, true, 'the avatar did not load');
   assert.match(state.text, /[A-Z][a-z]+ [a-z]+/, 'the card does not name the species');
 
@@ -795,4 +835,42 @@ test('an empty map at the young end states why it is empty', async () => {
     /0 localities occupied/,
     'the young end is not actually empty, so the note means nothing',
   );
+});
+
+test('the mixing diagram draws the three lineages, counts its lenses, and lays the ghost note out as a sentence', async () => {
+  await page.goto(BASE, { waitUntil: 'load' });
+  await sleep(900);
+  await page.locator('#mixing').scrollIntoViewIfNeeded();
+  await sleep(300);
+
+  const venn = page.locator('#venn');
+  // Three circles, named — and the names come from the data, not from the markup.
+  assert.equal(await venn.locator('svg circle').count(), 3, 'the Venn does not draw three lineages');
+  // textContent, not innerText: SVG elements have no innerText, and asking for it
+  // yields undefined for every one of them.
+  const labels = await venn.locator('svg text').allTextContents();
+  for (const name of ['Homo neanderthalensis', 'Homo denisova', 'Homo sapiens']) {
+    assert.ok(
+      labels.some((t) => t.includes(name)),
+      `the Venn does not name ${name}: ${labels.join(' | ')}`,
+    );
+  }
+
+  // Every mixing event in the data is offered, and the lens counts add up to them.
+  const contacts = JSON.parse(
+    readFileSync(join(root, 'src', 'data', 'contacts.json'), 'utf8'),
+  ).contacts;
+  const mixing = contacts.filter((c) => c.kind === 'admixture' || c.kind === 'hybrid');
+  assert.equal(await venn.locator('.mix').count(), mixing.length, 'the mixing list and the data disagree');
+
+  // The ghost note: the dot, then ONE element holding the whole sentence. Split
+  // into flex items it rendered as columns, which is what this pins down.
+  const note = venn.locator('.mix-ghost');
+  assert.equal(await note.count(), 1, 'the ghost lineage is not explained');
+  const shape = await note.evaluate((el) => ({
+    children: [...el.children].map((c) => c.tagName),
+    text: el.innerText.replace(/\s+/g, ' '),
+  }));
+  assert.deepEqual(shape.children, ['I', 'SPAN'], `the ghost note is laid out as separate boxes: ${shape.children.join(',')}`);
+  assert.match(shape.text, /found a bone of it: .* is known from/, 'the ghost note does not read as a sentence');
 });

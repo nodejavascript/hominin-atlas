@@ -24,6 +24,8 @@ const routes = data('routes.json').routes;
 const contacts = data('contacts.json').contacts;
 const sources = data('sources.json').sources;
 
+const faces = data('faces.json').faces;
+
 const byId = new Map(species.map((s) => [s.id, s]));
 const sourceKeys = new Set(sources.map((s) => s.key));
 
@@ -210,4 +212,62 @@ test('the honesty claims on the page are true of the data', () => {
     presences.some((p) => p.c === 'contested'),
     'no date is marked contested, so the page\u2019s example is wrong',
   );
+});
+
+// Every species word that can appear in a file name. A picture whose own name
+// says it is a different species must not be filed under this one: during
+// development the Neanderthal search returned "Modern H. sapiens.jpg" as its
+// best-scoring hit, which would have put a living human on that row.
+const SPECIES_WORDS = [
+  'sapiens', 'neanderthal', 'denisovan', 'erectus', 'habilis', 'floresiensis',
+  'luzonensis', 'naledi', 'longi', 'afarensis', 'africanus', 'sediba', 'robustus',
+  'boisei', 'aethiopicus', 'antecessor', 'heidelbergensis', 'rhodesiensis',
+  'ergaster', 'georgicus', 'ramidus', 'kadabba', 'nesher',
+];
+
+test('every picture is free to use, credited, and of the species it is filed under', () => {
+  const free = /^(cc0|cc[ -]by|public domain|pd[ -]|attribution)/i;
+  const notFree = /\b(nc|nd|non-?commercial|no-?deriv\w*|fair ?use|non-?free)\b/i;
+
+  for (const f of faces) {
+    assert.ok(byId.has(f.id), `${f.id} is not a species on this map`);
+    assert.ok(f.licence, `${f.id} has no licence`);
+    assert.ok(
+      free.test(f.licence) && !notFree.test(f.licence),
+      `${f.id} is filed under "${f.licence}", which is not free to rehost`,
+    );
+    // A Creative Commons licence always has a deed to link to; a public-domain
+    // file usually has none, because there is no licence to read — so the link is
+    // required exactly where there is something to link to.
+    const isPublicDomain = /public domain|pd[ -]/i.test(f.licence);
+    assert.ok(
+      f.licenceUrl || isPublicDomain,
+      `${f.id} is under ${f.licence} and links to no licence`,
+    );
+    assert.ok(
+      f.source.includes('commons.wikimedia.org/wiki/File:'),
+      `${f.id} is not linked to its Commons file`,
+    );
+    assert.ok(f.artist && f.artist.length > 1, `${f.id} does not name the artist`);
+    assert.ok(f.shows && f.shows.length > 12, `${f.id} does not say what the picture is`);
+    assert.match(f.file, /^\.\/avatars\/[a-z_]+\.jpg$/, `${f.id} points somewhere odd: ${f.file}`);
+
+    const own = new Set(`${f.id} ${f.article}`.toLowerCase().match(/[a-z]+/g));
+    const named = f.file_on_commons.toLowerCase();
+    for (const word of SPECIES_WORDS) {
+      assert.ok(
+        !named.includes(word) || own.has(word),
+        `${f.id} is shown by "${f.file_on_commons}", which names ${word}`,
+      );
+    }
+  }
+});
+
+test('no two species are shown by the same picture', () => {
+  const seen = new Map();
+  for (const f of faces) {
+    const other = seen.get(f.file_on_commons);
+    assert.equal(other, undefined, `${f.id} and ${other} are both shown by ${f.file_on_commons}`);
+    seen.set(f.file_on_commons, f.id);
+  }
 });

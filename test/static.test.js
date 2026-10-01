@@ -24,10 +24,18 @@ const html = read('index.html');
 const css = read('styles.css');
 
 /** The theme colours already taken by the rest of the family, from the register. */
+// Every theme colour already spoken for in the family. This list is a SNAPSHOT of
+// `~/.nodejs_theme_register.py` — that script reads the live sites and is the
+// authority; re-read it (`python3 ~/.nodejs_theme_register.py`, the TAKEN block)
+// whenever a site is added or recoloured, or this guard passes on a colour that
+// was taken yesterday. It DID pass on `#ea580c` after recallradar took it, which
+// is why the site was recoloured to `#ca8a04` on 2026-10-01.
+// `#fbbf24` is reserved for the family's GitHub star and may never be a theme.
 const TAKEN_COLOURS = [
-  '#08050d', '#0b0714', '#03090b', '#1d4ed8', '#34d399',
-  '#f472b6', '#fbbf24', '#23523c', '#6d28d9', '#0b1020',
-  '#05130e', '#15060f', '#130d04', '#fbf8f1', '#f6f5fb',
+  '#0284c7', '#03090b', '#08050d', '#0891b2', '#0a0f1f', '#0b0714',
+  '#0c1626', '#0f766e', '#12855a', '#14b8a6', '#1d4ed8', '#23523c',
+  '#34d399', '#38bdf8', '#64748b', '#6d28d9', '#7c3aed', '#a3e635',
+  '#b45309', '#e11d48', '#ea580c', '#f472b6', '#f97316', '#fbbf24',
 ];
 
 test('the document title IS the host, and nothing else', () => {
@@ -139,7 +147,7 @@ test('the icon set exists, and the large PNG is declared first', () => {
 
   const manifest = JSON.parse(read('manifest.webmanifest'));
   assert.equal(manifest.name, HOST);
-  assert.equal(manifest.theme_color, '#ea580c');
+  assert.equal(manifest.theme_color, '#ca8a04');
   for (const icon of manifest.icons) {
     assert.ok(existsSync(site(icon.src.replace(/^\//, ''))), `the manifest lists ${icon.src}`);
   }
@@ -178,7 +186,7 @@ test('the footer follows the house rules', () => {
 
 test('the theme is this site\u2019s own, in all four dimensions', () => {
   const theme = html.match(/<meta name="theme-color" content="([^"]+)"/)?.[1];
-  assert.equal(theme, '#ea580c');
+  assert.equal(theme, '#ca8a04');
   assert.ok(!TAKEN_COLOURS.includes(theme), `the theme colour ${theme} is already taken`);
   assert.match(css, /--bg:\s*#140704/, 'the page background is not this site\u2019s own');
   // Its own abstract: a drawing, not a wash, on its own masked layer.

@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="hominin-atlas">
   <title>hominin-atlas</title>
-  <g fill="none" stroke="#ea580c" stroke-width="2.1" stroke-linecap="round">
+  <g fill="none" stroke="#ca8a04" stroke-width="2.1" stroke-linecap="round">
     <circle cx="16" cy="16" r="11.4" />
     <path d="M6.2 20.8C10.2 14.6 16.4 10.8 25.9 11.4" />
   </g>
-  <g fill="#ea580c">
+  <g fill="#ca8a04">
     <circle cx="9.4" cy="19.1" r="2.1" />
     <circle cx="15.8" cy="13.6" r="1.5" />
     <circle cx="21.6" cy="11.8" r="1.3" />

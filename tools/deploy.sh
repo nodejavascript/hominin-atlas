@@ -64,8 +64,35 @@ echo "== 5/5  site audit"
 echo
 echo "deployed: https://${DOMAIN}/"
 echo
-echo "Still to do if this was the FIRST deploy — see DEPLOY-DAY.md:"
-echo "  - the GA4 property, then fill data-ga-id in site/index.html and redeploy"
-echo "  - Search Console, both property kinds, sitemap submitted to both"
-echo "  - the card on nodejavascript.com"
-echo "  - the theme register and the compliance check"
+
+# The first-deploy set is CHECKED here, not asserted. This list used to print
+# unconditionally, so on 2026-10-01 it was naming the Analytics property and Search
+# Console as outstanding two deploys after both had been done — and a list that
+# survives the work teaches the reader to ignore it. The two the repo can answer are
+# read; the rest are named with the command that answers them. Record: DEPLOY-DAY.md.
+todo=()
+
+if grep -qE 'data-ga-id=""' site/index.html; then
+  todo+=("Analytics — the page carries no measurement id: create the property, fill data-ga-id in site/index.html, then redeploy")
+fi
+
+if ! grep -q 'Sitemap:' site/robots.txt; then
+  todo+=("robots.txt declares no Sitemap: line")
+fi
+
+if [ "${#todo[@]}" -eq 0 ]; then
+  echo "first-deploy set — the two the repo can answer:"
+  echo "  the measurement id is in the page   ·   robots.txt declares the sitemap"
+  echo "the rest are answered by their own command, never by a list here:"
+  echo "  Search Console, both kinds    python3 ~/.searchconsole_setup.py"
+  echo "  the theme register, clashes   python3 ~/.nodejs_theme_register.py"
+  echo "  the compliance check          python3 ~/.nodejs_compliance.py --save"
+  echo "  the card on the apex          cd ../nodejavascript.com && node tools/projects.mjs"
+else
+  echo "Still to do before this is a finished site:"
+  for item in "${todo[@]}"; do
+    echo "  - ${item}"
+  done
+  echo
+  echo "  and once those pass — see DEPLOY-DAY.md for the full set."
+fi

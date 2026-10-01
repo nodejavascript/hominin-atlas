@@ -160,5 +160,5 @@ instead of the artefact.
 * **No `privacy.html`** — the policy is a `#privacy` section of the page.
 * **No `www`,** no `.html` in any URL, no Back to top, and the repository line carries
   the star in the page's own yellow.
-* **The theme is its own in all four dimensions:** `#ea580c` over `#140704`, a
+* **The theme is its own in all four dimensions:** `#ca8a04` over `#140704`, a
   repeating field of chevrons as the abstract, and its own Analytics id.

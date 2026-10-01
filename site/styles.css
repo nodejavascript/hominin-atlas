@@ -1,7 +1,7 @@
 /**
  * styles.css — hominin-atlas.nodejavascript.com
  *
- * The page's identity is its own: theme colour #ea580c, page background
+ * The page's identity is its own: theme colour #ca8a04, page background
  * #140704, its own gradient wash, and its own abstract — a repeating field of
  * CHEVRONS, the dispersal mark. No other site in the family draws chevrons.
  *
@@ -14,12 +14,12 @@
 
 :root {
   --bg: #140704;
-  --accent: #ea580c;
+  --accent: #ca8a04;
   --accent-soft: #f59e0b;
   --yellow: #fbbf24;
   --text: #f6efe8;
   --muted: #b6a696;
-  --hairline: rgba(234, 88, 12, 0.26);
+  --hairline: rgba(202, 138, 4, 0.26);
   --card: rgba(255, 255, 255, 0.035);
   --card-line: rgba(255, 255, 255, 0.09);
   --container: 1120px;
@@ -77,7 +77,7 @@ body {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='54' height='52' viewBox='0 0 54 52'%3E%3Cg fill='none' stroke='%23ea580c' stroke-linecap='round' stroke-width='1.6'%3E%3Cpath stroke-opacity='.24' d='M7 30 L27 12 L47 30'/%3E%3Cpath stroke-opacity='.12' d='M7 46 L27 28 L47 46'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='54' height='52' viewBox='0 0 54 52'%3E%3Cg fill='none' stroke='%23ca8a04' stroke-linecap='round' stroke-width='1.6'%3E%3Cpath stroke-opacity='.24' d='M7 30 L27 12 L47 30'/%3E%3Cpath stroke-opacity='.12' d='M7 46 L27 28 L47 46'/%3E%3C/g%3E%3C/svg%3E");
   background-repeat: repeat;
   -webkit-mask-image: radial-gradient(ellipse 92% 78% at 50% 34%, #000 0%, rgba(0, 0, 0, 0.55) 52%, transparent 82%);
   mask-image: radial-gradient(ellipse 92% 78% at 50% 34%, #000 0%, rgba(0, 0, 0, 0.55) 52%, transparent 82%);

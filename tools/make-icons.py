@@ -14,7 +14,7 @@ the family:
     light tab strip;
   * the APPLE icon is not: iOS paints transparency black, so it takes the site's
     own near-black at full opacity;
-  * the mark wears the SITE'S OWN colour (#ea580c), which is also its theme
+  * the mark wears the SITE'S OWN colour (#ca8a04), which is also its theme
     colour — never a colour chosen for the icon alone;
   * it is drawn for SIXTEEN pixels. A vector drawing and a 16-pixel raster are
     different objects, so the render is done at 4x and downsampled, and the
@@ -34,7 +34,7 @@ from PIL import Image, ImageDraw, ImageFont
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(HERE, "..", "site")
 
-ACCENT = (234, 88, 12, 255)        # #ea580c — the theme colour
+ACCENT = (202, 138, 4, 255)        # #ca8a04 — the theme colour
 GROUND = (20, 7, 4, 255)           # #140704 — the page background
 YELLOW = (251, 191, 36, 255)       # #fbbf24 — the family's yellow, for the card
 

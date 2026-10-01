@@ -7,12 +7,13 @@
  *
  *   node tools/serve.js [port]
  *
- * ATLAS_TEST_GA fills the empty data-ga-id attribute with a measurement id for
- * the end-to-end suite only. It exists because the shipped page carries an EMPTY
- * id on purpose — the Analytics property is created on deploy day together with
- * the DNS record (see DEPLOY-DAY.md) — and the cookie gate cannot be exercised
- * without one. It is a local server affordance and never reaches the deployed
- * site, which is served as a static directory.
+ * ATLAS_TEST_GA REPLACES the page's measurement id for the end-to-end suite. It
+ * is not conditional on the id being empty: the shipped page carries the real
+ * property, and a local test run must never report to a live Analytics property.
+ * The suite asserts the tag it loads is the test id, so the substitution has to
+ * hold whether or not deploy day has happened yet. It is a local server
+ * affordance and never reaches the deployed site, which is served as a static
+ * directory.
  */
 
 import { createServer } from 'node:http';
@@ -53,7 +54,9 @@ const server = createServer(async (req, res) => {
     let out = body;
     if (process.env.ATLAS_TEST_GA && extname(file) === '.html') {
       out = Buffer.from(
-        body.toString('utf8').replace('data-ga-id=""', `data-ga-id="${process.env.ATLAS_TEST_GA}"`),
+        body
+          .toString('utf8')
+          .replace(/data-ga-id="[^"]*"/, `data-ga-id="${process.env.ATLAS_TEST_GA}"`),
       );
     }
     res.writeHead(200, {

@@ -130,53 +130,6 @@ export function isLowSea(years: number): boolean {
   return GLACIALS.some(([older, younger]) => years <= older && years >= younger);
 }
 
-/**
- * The land that is only there at a glacial lowstand, drawn coarsely. These are
- * hulls around the shelf, not surveyed coastlines — they are here so a visitor
- * can see why a crossing of the Java Sea or the Bering Strait was possible, not
- * to be measured against.
- *
- * [longitude, latitude]; longitude may run past ±180 so Beringia can be drawn
- * across the seam.
- */
-export const SHELF: ReadonlyArray<{ id: string; label: string; pts: [number, number][] }> = [
-  {
-    id: 'sunda',
-    label: 'Sundaland — the Malay Peninsula, Sumatra, Java, Borneo and Bali joined',
-    pts: [
-      [99, 7], [103, 9], [108, 8], [113, 6], [117, 5], [119, 2], [117, -2],
-      [113, -5], [108, -7.5], [103, -7], [100, -3], [98, 1], [98, 5],
-    ],
-  },
-  {
-    id: 'sahul',
-    label: 'Sahul — Australia and New Guinea joined, and never joined to Sunda',
-    pts: [
-      [112, -9], [120, -9], [130, -9], [138, -9], [144, -8], [148, -10],
-      [151, -13], [150, -19], [146, -25], [141, -32], [137, -38], [130, -35],
-      [122, -34], [115, -30], [112, -22], [111, -15], [112, -11],
-    ],
-  },
-  {
-    id: 'beringia',
-    label: 'Beringia — Siberia joined to Alaska by dry land at the glacial maximum',
-    pts: [
-      [165, 64], [172, 66], [180, 68], [188, 69], [190, 66], [185, 62],
-      [176, 60], [168, 61],
-    ],
-  },
-  {
-    id: 'doggerland',
-    label: 'Doggerland — the North Sea floor, dry and inhabited',
-    pts: [[-3, 54], [2, 56], [5, 55], [6, 52], [3, 51], [-2, 52]],
-  },
-  {
-    id: 'persian-gulf',
-    label: 'The Persian Gulf was a river valley, not a gulf',
-    pts: [[48, 30], [52, 29], [56, 27], [56, 25], [52, 25], [48, 27]],
-  },
-];
-
 // ── lookup helpers ────────────────────────────────────────────────────────────
 
 /**

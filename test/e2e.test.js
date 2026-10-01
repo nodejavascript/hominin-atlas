@@ -725,11 +725,13 @@ test('hovering a dot says which hominin it is', async () => {
     [60, 30],
   ];
   let hit = false;
+  let at = { x: 0, y: 0 };
   for (const [lat, lon] of spots) {
-    await page.mouse.move(
-      box.x + ((lon + 180) / 360) * box.width,
-      box.y + ((90 - lat) / 180) * box.height,
-    );
+    at = {
+      x: box.x + ((lon + 180) / 360) * box.width,
+      y: box.y + ((90 - lat) / 180) * box.height,
+    };
+    await page.mouse.move(at.x, at.y);
     await sleep(120);
     if (await page.locator('#hoverReadout').isVisible()) {
       hit = true;
@@ -749,14 +751,49 @@ test('hovering a dot says which hominin it is', async () => {
   assert.equal(state.loaded, true, 'the avatar did not load');
   assert.match(state.text, /[A-Z][a-z]+ [a-z]+/, 'the card does not name the species');
 
+  // The card is anchored to the DOT, not to a corner of the frame: it used to sit
+  // at the bottom left, which makes the reader look away from the thing they are
+  // pointing at to find out what it is.
+  const away = await card.evaluate((el, pointer) => {
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    return Math.hypot(cx - pointer.x, cy - pointer.y);
+  }, at);
+  assert.ok(away < 240, `the card is ${Math.round(away)} pixels from the dot it describes`);
+
   // And it is anchored to the map, not to the frame — the legend moved below the
   // map and a card anchored to the frame was drawn underneath it.
-  const inside = await page.evaluate(() => {
+  const placement = await page.evaluate(() => {
     const g = document.getElementById('globe').getBoundingClientRect();
     const r = document.getElementById('hoverReadout').getBoundingClientRect();
-    return r.top >= g.top && r.bottom <= g.bottom && r.left >= g.left && r.right <= g.right;
+    return {
+      inside: r.top >= g.top && r.bottom <= g.bottom && r.left >= g.left && r.right <= g.right,
+      card: { t: Math.round(r.top), b: Math.round(r.bottom), l: Math.round(r.left), r: Math.round(r.right) },
+      map: { t: Math.round(g.top), b: Math.round(g.bottom), l: Math.round(g.left), r: Math.round(g.right) },
+    };
   });
-  assert.equal(inside, true, 'the hover card is outside the map it describes');
+  assert.equal(
+    placement.inside,
+    true,
+    `the hover card is outside the map it describes: card ${JSON.stringify(placement.card)} map ${JSON.stringify(placement.map)}`,
+  );
+
+  // And it lingers, so crossing the gap between two dots does not blink it away.
+  await page.mouse.move(box.x + 6, box.y + box.height - 6);
+  await sleep(220);
+  assert.equal(
+    await page.locator('#hoverReadout').isVisible(),
+    true,
+    'the card vanished the instant the pointer left the dot',
+  );
+  await sleep(1100);
+  assert.equal(
+    await page.locator('#hoverReadout').isVisible(),
+    false,
+    'the card never went away again',
+  );
+
 });
 
 test('the globe answers a hover too', async () => {
@@ -873,4 +910,80 @@ test('the mixing diagram draws the three lineages, counts its lenses, and lays t
   }));
   assert.deepEqual(shape.children, ['I', 'SPAN'], `the ghost note is laid out as separate boxes: ${shape.children.join(',')}`);
   assert.match(shape.text, /found a bone of it: .* is known from/, 'the ghost note does not read as a sentence');
+});
+
+test('the glacial shelf hugs the coast and does not tint the deep sea', async () => {
+  // The shelf is the sea floor shallower than 200 metres, drawn by filling the
+  // plate and cutting the deep sea out of it. It used to be four polygons written
+  // by hand and drawn OVER the land, so a rectangle of orange crossed Sumatra and
+  // half of Australia with straight edges through open sea.
+  //
+  // The regression this pins down is subtler and it happened: a destination-out
+  // fill subtracts the source's ALPHA, so leaving the 32%-alpha shelf colour set
+  // did not cut the deep sea out at all — it dimmed the whole plate to 68% of
+  // itself and the map came out uniformly tinted. Zero pixels erased, and it
+  // looked like a theme change rather than a bug.
+  const stats = async (url) => {
+    await page.goto(url, { waitUntil: 'load' });
+    await sleep(1400);
+    return page.evaluate(() => {
+      const c = document.querySelector('#globe canvas');
+      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      const counts = new Map();
+      for (let i = 0; i < d.length; i += 4) {
+        const k = `${d[i]},${d[i + 1]},${d[i + 2]}`;
+        counts.set(k, (counts.get(k) ?? 0) + 1);
+      }
+      let modal = null;
+      let most = -1;
+      for (const [k, n] of counts) if (n > most) { most = n; modal = k; }
+      return { modal, ocean: counts.get(modal), colours: counts.size };
+    });
+  };
+
+  // 3,000 years ago is the present interglacial; 25,000 is inside the last
+  // glacial maximum, which runs from 29,000 to 15,000 years ago. 30,000 is NOT —
+  // it is just outside the window, and asserting on it would have compared two
+  // renders with no shelf in either.
+  const modern = await stats(`${BASE}?at=3000`);
+  const glacial = await stats(`${BASE}?at=25000`);
+
+  assert.equal(
+    glacial.modal,
+    modern.modal,
+    `the deep sea changed colour when the shelf was drawn: ${modern.modal} became ${glacial.modal}`,
+  );
+  assert.ok(
+    glacial.ocean < modern.ocean,
+    'the shelf covers none of the sea, so nothing was drawn',
+  );
+  assert.ok(
+    glacial.colours > modern.colours,
+    'the shelf introduced no colour of its own',
+  );
+});
+
+test('a play-through takes about two and a half minutes', async () => {
+  // It was 70 seconds and that was too fast to watch: two thirds of the story
+  // sits in the last 2 percent of the timeline. Measured rather than asserted
+  // from the constant, because the speed is the thing that changed.
+  // From the far end of the timeline, where the scale is linear: 6,000,000 to
+  // 3,000,000 years over the first 12% of the sweep.
+  await page.goto(`${BASE}?at=6000000`, { waitUntil: 'load' });
+  await sleep(1300);
+  await page.click('#play');
+  const before = Number(await page.getAttribute('#globe', 'data-years'));
+  await sleep(3000);
+  const after = Number(await page.getAttribute('#globe', 'data-years'));
+  await page.click('#play');
+
+  const elapsed = before - after;
+  assert.ok(elapsed > 0, 'the play button did not move the timeline');
+  // 150 seconds for the sweep: in the first 12% of the scale that is about
+  // 167,000 years a second, so three seconds is roughly half a million years.
+  // At 70 seconds it would be a million, which is what this catches.
+  assert.ok(
+    elapsed > 250_000 && elapsed < 800_000,
+    `three seconds of play moved ${Math.round(elapsed).toLocaleString('en')} years`,
+  );
 });

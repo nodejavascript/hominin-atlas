@@ -59,7 +59,7 @@ function fitRect(width: number, height: number): Rect {
 export function createFlatMap(
   container: HTMLElement,
   onSelect: SelectHandler,
-  onHover: (presence: Presence | null) => void,
+  onHover: (presence: Presence | null, at?: { x: number; y: number }) => void,
 ): FlatMapApi {
   const canvas = document.createElement('canvas');
   canvas.className = 'flatcanvas';
@@ -340,7 +340,7 @@ export function createFlatMap(
     if (found !== hovered) {
       hovered = found;
       canvas.style.cursor = found ? 'pointer' : 'grab';
-      onHover(found);
+      onHover(found, found ? { x: event.clientX, y: event.clientY } : undefined);
     }
   });
 

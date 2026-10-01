@@ -60,7 +60,7 @@ function ll2v(lat: number, lon: number, r: number): THREE.Vector3 {
 export function createGlobe(
   container: HTMLElement,
   onSelect: SelectHandler,
-  onHover?: (presence: Presence | null) => void,
+  onHover?: (presence: Presence | null, at?: { x: number; y: number }) => void,
 ): GlobeApi {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#120703');
@@ -237,7 +237,8 @@ export function createGlobe(
     if (hit !== hovered) {
       hovered = hit;
       renderer.domElement.style.cursor = hit ? 'pointer' : 'grab';
-      onHover?.((hit?.userData.presence as Presence | undefined) ?? null);
+      const presence = (hit?.userData.presence as Presence | undefined) ?? null;
+      onHover?.(presence, presence ? { x: event.clientX, y: event.clientY } : undefined);
     }
   });
 

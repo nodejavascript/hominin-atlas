@@ -10,8 +10,7 @@
     "test:e2e": "npm run build && node --test test/e2e.test.js",
     "test:all": "npm run build && node --test test/*.test.js",
     "icons": "python3 tools/make-icons.py",
-  "avatars": "python3 tools/make-avatars.py",
-    "serve": "node tools/serve.js",
+  "avatars": "python3 tools/make-avatars.py",    "shelf": "python3 tools/make-shelf.py",    "serve": "node tools/serve.js",
     "deploy": "bash tools/deploy.sh"
   },
   "engines": {

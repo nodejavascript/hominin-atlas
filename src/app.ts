@@ -149,13 +149,35 @@ function handleSelect(selection: Selection | null): void {
   else setPanelOpen(false);
 }
 
-function handleHover(presence: Presence | null): void {
+/**
+ * The card that names the dot under the pointer.
+ *
+ * It is anchored TO THE DOT — the pointer's own position, kept inside the map —
+ * rather than parked in a corner of the frame. A card in the corner makes the
+ * reader look away from the thing they are pointing at to find out what it is,
+ * and on a map of two hundred localities that is the whole job.
+ *
+ * It also LINGERS. Hiding on the first `pointerleave` means crossing the gap
+ * between two dots blinks the card away and back, and a dot that is only a few
+ * pixels across is easy to fall off: the card used to be unreadable at the speed
+ * it disappeared. So it stays up for a moment after the pointer leaves, and a
+ * new dot arriving in that moment takes it over.
+ */
+const HOVER_LINGER_MS = 700;
+let hoverTimer: ReturnType<typeof setTimeout> | undefined;
+
+function handleHover(presence: Presence | null, at?: { x: number; y: number }): void {
   if (!hoverOut) return;
+  clearTimeout(hoverTimer);
+
   if (!presence) {
-    hoverOut.hidden = true;
-    hoverOut.replaceChildren();
+    hoverTimer = setTimeout(() => {
+      hoverOut.hidden = true;
+      hoverOut.replaceChildren();
+    }, HOVER_LINGER_MS);
     return;
   }
+
   const species = atlas.speciesById.get(presence.s);
   const nick = species ? nickname(species) : '';
   hoverOut.hidden = false;
@@ -170,6 +192,31 @@ function handleHover(presence: Presence | null): void {
     `</span>` +
     `<span class="hover-where">${esc(presence.site)} · ${esc(formatYears(presence.from))}</span>` +
     `</span>`;
+
+  if (at) placeHover(at);
+}
+
+/** Put the card near the pointer, and keep it inside the map. */
+function placeHover(at: { x: number; y: number }): void {
+  const host = hoverOut?.offsetParent as HTMLElement | null;
+  if (!hoverOut || !host) return;
+  const box = host.getBoundingClientRect();
+  const x = at.x - box.left;
+  const y = at.y - box.top;
+  const width = hoverOut.offsetWidth;
+  const height = hoverOut.offsetHeight;
+  const gap = 16;
+  // Above and to the right of the dot by default, because that is where there is
+  // usually room; flipped or slid when there is not.
+  let left = x + gap;
+  let top = y - height - gap;
+  if (left + width > box.width - 8) left = x - width - gap;
+  if (left < 8) left = 8;
+  if (top < 8) top = y + gap;
+  if (top + height > box.height - 8) top = box.height - height - 8;
+  hoverOut.style.left = `${Math.round(left)}px`;
+  hoverOut.style.top = `${Math.round(top)}px`;
+  hoverOut.style.bottom = 'auto';
 }
 
 function buildView(kind: ViewKind): MapViewApi {
@@ -468,7 +515,7 @@ function syncReadout(): void {
         'This far back the ice-age record is drawn from the 41,000-year cycle, which is not resolved well enough to show a coastline. The shelf is not drawn.';
     } else if (isLowSea(years)) {
       seaOut.textContent =
-        'Sea level is low — a glacial period. The shaded shelf was dry land, and it is why a crossing of the Java Sea, or of the strait between Siberia and Alaska, was walkable or nearly so.';
+        'Sea level is low — a glacial period. The shading is the sea floor shallower than 200 metres, which is why a crossing of the Java Sea, or of the strait between Siberia and Alaska, was walkable or nearly so. The sea then stood about 120 metres below today, so the shoreline lay inside that edge, not on it.';
     } else if (years < 11_700) {
       seaOut.textContent =
         'Sea level is close to today\u2019s. This is the present interglacial, and the coastlines drawn here are the modern ones.';
@@ -520,9 +567,12 @@ function tick(now: number): void {
   if (!playing) return;
   const dt = lastFrame ? Math.min(120, now - lastFrame) : 16;
   lastFrame = now;
-  // A full sweep of the whole record takes about 70 seconds, which is long
-  // enough to read a label and short enough not to be a wait.
-  const pos = posAt(years) + dt / 70_000;
+  // A full sweep takes about two and a half minutes. It was 70 seconds, which
+  // turned out to be too fast to watch: two thirds of the story sits in the last
+  // 2 percent of the timeline, so the part a visitor has come to see — the
+  // dispersal, the crossings, the arrivals — went past in about fifteen seconds
+  // and the dots were still growing when the next one arrived.
+  const pos = posAt(years) + dt / 150_000;
   if (pos >= 1) {
     applyYears(0);
     stop();

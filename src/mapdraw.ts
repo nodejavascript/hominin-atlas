@@ -17,17 +17,23 @@
 import { feature } from 'topojson-client';
 import land from 'world-atlas/land-50m.json';
 
-import { SHELF } from './atlas';
+import deepseaJson from './data/deepsea.json';
 
 export type Pt = [number, number];
 export type Ring = Pt[];
 export type Poly = Ring[];
 
+/**
+ * The sea deeper than 200 metres. The shelf is everything that is NOT in here —
+ * see drawShelf. Baked by tools/make-shelf.py from Natural Earth's 1:10m
+ * bathymetry, which is public domain and the same source as the coastline.
+ */
+const deepsea = deepseaJson.polygons as unknown as Poly[];
+
 const OCEAN = '#0f1620';
 const LAND = '#4a3b28';
 const LAND_EDGE = '#7d6547';
 const SHELF_FILL = 'rgba(214, 140, 60, 0.32)';
-const SHELF_EDGE = 'rgba(245, 176, 88, 0.55)';
 
 /** Where the base is painted before anything scales it. */
 export const BASE_W = 2048;
@@ -101,6 +107,31 @@ function hasArea(ring: Ring): boolean {
   return Math.abs(twice / 2) > 1e-6;
 }
 
+/**
+ * Paint a set of polygons as one path, at 0 and ±360 degrees of longitude, so a
+ * shape that straddles the antimeridian appears on both edges of the plate
+ * rather than being sliced by the seam. Shared by the land and the deep sea.
+ */
+function pathOf(ctx: CanvasRenderingContext2D, polygons: Poly[], w: number, h: number): void {
+  for (const offset of [0, -360, 360]) {
+    for (const polygon of polygons) {
+      for (const ring of polygon) {
+        if (!hasArea(ring)) continue;
+        for (const run of splitRing(ring)) {
+          if (run.length < 3) continue;
+          const first = run[0]!;
+          ctx.moveTo(lonToX(first[0] + offset, w), latToY(first[1], h));
+          for (let i = 1; i < run.length; i++) {
+            const pt = run[i]!;
+            ctx.lineTo(lonToX(pt[0] + offset, w), latToY(pt[1], h));
+          }
+          ctx.closePath();
+        }
+      }
+    }
+  }
+}
+
 function drawLand(ctx: CanvasRenderingContext2D, polygons: Poly[], w: number, h: number): void {
   ctx.fillStyle = LAND;
   ctx.strokeStyle = LAND_EDGE;
@@ -142,28 +173,85 @@ function drawGraticule(ctx: CanvasRenderingContext2D, w: number, h: number): voi
   ctx.stroke();
 }
 
-function drawShelf(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-  // Drawn three times, at 0 and ±360 degrees, so a shelf that straddles the
-  // antimeridian — Beringia — appears on both edges of the map rather than being
-  // sliced by the seam.
-  for (const offset of [0, -360, 360]) {
-    for (const shelf of SHELF) {
-      ctx.beginPath();
-      for (let i = 0; i < shelf.pts.length; i++) {
-        const [lon, lat] = shelf.pts[i]!;
-        const x = lonToX(lon + offset, w);
-        const y = latToY(lat, h);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.closePath();
-      ctx.fillStyle = SHELF_FILL;
-      ctx.fill();
-      ctx.strokeStyle = SHELF_EDGE;
-      ctx.lineWidth = 1.4;
-      ctx.stroke();
-    }
+/**
+ * The shelf, at a glacial lowstand: the sea floor shallower than 200 metres.
+ *
+ * WHAT THIS REPLACED, AND WHY IT MATTERS. This used to be four polygons written
+ * by hand. They were drawn ON TOP of the land with a hard outline, so a rectangle
+ * of orange sat across Sumatra, Borneo and half of Australia with its straight
+ * edges cutting through open sea — it read as a rendering fault, and it was one.
+ *
+ * The shading is now a real contour of the sea floor, from the same public-domain
+ * source as the coastline. The data is the sea DEEPER than 200 metres — the shelf
+ * is its complement — so the plate is filled with the shelf colour and the deep
+ * sea is cut out of it. That is also why the deep sea has to be cut rather than
+ * drawn: the shelf is not a shape, it is everything that is left.
+ *
+ * The land and its lakes are cut out too. Without that, an inland sea with no
+ * deep water in it — the Caspian's northern basin, the Great Lakes — would come
+ * out shelf-coloured, which is a claim the map has no business making.
+ *
+ * ⚠ The 200-metre line is the SHELF EDGE, not the glacial shoreline: at the
+ * glacial maxima the sea stood about 120 metres lower, so the dry land lay
+ * somewhere inside this edge. The legend says so in those words.
+ */
+function drawShelf(ctx: CanvasRenderingContext2D, land: Poly[], w: number, h: number): void {
+  ctx.save();
+
+  // Everything is shelf to begin with...
+  ctx.fillStyle = SHELF_FILL;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.globalCompositeOperation = 'destination-out';
+
+  // 🔴 THE FILL HAS TO BE OPAQUE. A destination-out fill subtracts the SOURCE's
+  // alpha from the destination's, so leaving the shelf colour set here — 32%
+  // alpha — did not cut the deep sea out at all: it dimmed the whole plate to
+  // 68% of itself and the map came out uniformly tinted. Measured: zero pixels
+  // erased, and it read as a theme change rather than as a bug.
+  ctx.fillStyle = '#000';
+
+  ctx.beginPath();
+  pathOf(ctx, deepsea as Poly[], w, h);
+  ctx.fill('evenodd');
+
+  // ...and the ocean goes back UNDERNEATH what is left, which is the shelf. That
+  // is why no second canvas is needed: destination-over paints only where the
+  // plate is transparent now, which is exactly the deep sea.
+  ctx.globalCompositeOperation = 'destination-over';
+  ctx.fillStyle = OCEAN;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.restore();
+
+  // ⚠ THE LAND IS NOT CUT OUT OF THIS, AND THAT IS DELIBERATE. It used to be,
+  // and it cost 680ms of the base map's 1,030ms — for the square metre of it that
+  // mattered: the land data has exactly TWO hole rings, one of which is the
+  // Caspian and the other a degenerate line along the Antarctic edge. The land
+  // itself is drawn over this a moment later, so cutting it out changed nothing
+  // a reader could see. The lakes are painted here instead, which is the whole of
+  // what the cut was for.
+  ctx.save();
+  ctx.fillStyle = OCEAN;
+  ctx.beginPath();
+  pathOf(ctx, lakes(land), w, h);
+  ctx.fill('evenodd');
+  ctx.restore();
+}
+
+/**
+ * The holes in a set of land polygons — lakes and inland seas.
+ *
+ * In GeoJSON, and in the data this reads, the first ring of a polygon is its
+ * outline and every ring after it is a hole. So this is the second ring onwards
+ * of each polygon, and most polygons have none.
+ */
+function lakes(polygons: Poly[]): Poly[] {
+  const out: Poly[] = [];
+  for (const polygon of polygons) {
+    if (polygon.length > 1) out.push(...polygon.slice(1).map((ring) => [ring] as Poly));
   }
+  return out;
 }
 
 /**
@@ -185,9 +273,9 @@ export function buildBase(
 
   ctx.fillStyle = OCEAN;
   ctx.fillRect(0, 0, width, height);
+  if (opts.shelf) drawShelf(ctx, polygons, width, height);
   drawLand(ctx, polygons, width, height);
   if (opts.graticule !== false) drawGraticule(ctx, width, height);
-  if (opts.shelf) drawShelf(ctx, width, height);
 
   return canvas;
 }
@@ -211,4 +299,4 @@ export function splitAtSeam(points: Pt[]): Pt[][] {
   return runs;
 }
 
-export { OCEAN, LAND, LAND_EDGE, SHELF_FILL, SHELF_EDGE };
+export { OCEAN, LAND, LAND_EDGE, SHELF_FILL };

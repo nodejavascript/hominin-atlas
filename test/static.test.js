@@ -88,11 +88,23 @@ test('nothing is fetched from a third party', () => {
   }
 });
 
-test('the cookie gate is present, deferred, and carries no id until deploy day', () => {
+test('the cookie gate is present, deferred, and carries the measurement id for this site', () => {
   const gate = html.match(/<script src="\.\/consent\.js"([^>]*)><\/script>/)?.[1] ?? '';
   assert.ok(gate, 'the consent gate is not in the page');
-  assert.match(gate, /data-ga-id=""/, 'the measurement id is not the deploy-day placeholder');
-  assert.match(gate, /\bdefer\b/);
+  assert.match(gate, /\bdefer\b/, 'the gate is not deferred');
+  // The id is no longer a placeholder: the property exists, so an empty one here
+  // would mean the site silently measures nothing.
+  assert.match(
+    gate,
+    /data-ga-id="G-[A-Z0-9]+"/,
+    'the gate carries no measurement id, so analytics would never load',
+  );
+  // And whatever the gate carries, the TAG is still not in the page — the gate
+  // is the only thing allowed to append it, and only after a yes.
+  assert.ok(
+    !/<script[^>]+googletagmanager\.com/.test(html),
+    "Google's tag is in the page itself, so it loads before anybody consents",
+  );
 
   // And the bar it drives is all there.
   for (const id of [

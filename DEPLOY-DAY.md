@@ -1,99 +1,142 @@
-# Deploy day
+# Deploy day — 1 October 2026
 
-**The site is built and tested locally. Nothing here is deployed.**
+**This file was the list of things deliberately NOT done, because the house rule is
+that a hostname exists only once it is deployed. It is the record now: what the
+deploy took, what went wrong, and what is still outstanding.**
 
-This file is the list of things that are deliberately NOT done yet, because the
-house rule is that a hostname exists only once it is deployed: the DNS record, the
-Analytics property, the Search Console properties and the card on the apex are all
-created **together, on the day**, not in advance.
-
-Work through it in this order.
+The live site: **https://hinomin-atlas.nodejavascript.com/**
 
 ---
 
-## 1 · The repository
+## 1 · The repository — public, and swept BEFORE it was
 
-The footer prints `github.com/nodejavascript/hominin-atlas`, so the repository must
-exist before the page goes live.
+`~/.public_repo_sweep.py --repo . --public --history` **failed first, with five
+findings**, and every one of them was real:
 
-```bash
-cd ~/Documents/git/github.com/nodejavascript/hominin-atlas
-git init -b main
-git add -A && git commit -m "hominin-atlas: an atlas of every hominin on one globe"
-gh repo create nodejavascript/hominin-atlas --public --source . --push
+1. `an address removed before publication` in the working tree — the Wikimedia user-agent in
+   `tools/fetch-faces.py` carried a contact address, because Commons asks for one.
+2. and 3. the same address in **the commit that introduced it** — *"a line deleted
+   today is still in the commit that introduced it"*.
+4. the address in **documentation prose**.
+5. 🔴 **every commit was authored as `an address removed before publication`.** This is the one nobody
+   sees: a repository publishes its commit authors, no file scan reveals them, and it
+   is on **every** commit rather than on the one that added the line.
+
+**Fixed properly, not cosmetically.** The tree was fixed first with a comment saying
+why a URL is the contact and not an address; then the history was rewritten with
+`git filter-repo --replace-text` (the email, in every blob) and `--email-callback`
+(the author and committer of all eight commits). The identity is now
+`geooogle <105805523+nodejavascript@users.noreply.github.com>` — the same noreply
+form `vision-ml-demo` already uses. **`SWEEP OK` afterwards, and the sweep is what
+proves it, not the intention.**
+
+Then `gh repo create nodejavascript/hominin-atlas --public --source . --push`.
+
+> ⚠️ **The push failed first, and the reason is worth keeping:** *"Permission to
+> nodejavascript/hominin-atlas.git denied to georgefielder"* — the bare
+> `github.com` SSH alias uses the **georgefielder** key. The remote for a
+> `nodejavascript` repository is **`git@github-nodejs:nodejavascript/hominin-atlas.git`**.
+
+## 2 · DNS
+
+A proxied `A` record for `hinomin-atlas` → `178.128.225.32` (the `dvs-sites` droplet),
+TTL auto, created through the DNS-scoped token. **No `www` record, and none was
+created** — part 7c, checked after the fact with a query for it.
+
+## 3 · The host
+
+A site block on `dvs-sites`, appended to `/etc/caddy/Caddyfile` after backing it up:
+
+```
+hominin-atlas.nodejavascript.com {
+	import no-ga-for-me
+	header Cache-Control "no-store"
+	header /manifest.webmanifest Content-Type "application/manifest+json; charset=utf-8"
+	root * /srv/hominin-atlas
+	import clean-urls
+	file_server
+	encode gzip
+}
 ```
 
-House part 12: a **public** repo lives on GitHub under `nodejavascript`, and if it
-had been on GitLab the GitLab project is removed. Before pushing:
+`caddy validate` → **Valid configuration**, and only then a reload. `no-ga-for-me`
+already carries the `?ga=off` / `?ga=on` `X-Robots-Tag` matcher, so nothing new was
+needed for that and **nothing was added to `robots.txt`**.
 
-```bash
-~/.public_repo_sweep.py --repo . --public --history
-```
+## 4 · Analytics — the property, and the line in the page
 
-## 2 · DNS and the host
+* Property **557004013** `hinomin-atlas.nodejavascript.com`, in the **`mcp` account**,
+  `America/Toronto` and **CAD** — matching all 26 properties already there rather than
+  the API's USD default.
+* Stream **15939054405** → measurement id **`G-DSBD2WDQ43`**, filled into
+  `site/index.html`'s `data-ga-id`.
+* Retention **`FOURTEEN_MONTHS`**, read back.
+* **Five key events**, read back: `map_ready`, `species_open`, `locality_open`,
+  `contact_open`, `timeline_station`. **This site has no form, no signup and no
+  purchase**, so `generate_lead` is not one of them and inventing it would have
+  registered a conversion that can never happen.
 
-* Cloudflare zone `nodejavascript.com` — a proxied `A` record for
-  `hominin-atlas` → `178.128.225.32` (the `dvs-sites` droplet).
-* **No `www` record. Ever.** Part 7c, and `~/.nodejs_host_property_check.py` gates it.
-* Caddy on `dvs-sites`: a site block for `hominin-atlas.nodejavascript.com`
-  serving `/srv/hominin-atlas`, with the `(clean-urls)` snippet imported and
-  `Cache-Control: no-store` on `/` (part 7 — a deploy must be visible).
-* Add the `?ga=off` / `?ga=on` **`X-Robots-Tag: noindex, nofollow`** matcher to the
-  block. Do **not** add them to `robots.txt`: a `Disallow` stops Google reading the
-  canonical, which is the mechanism that consolidates the control URLs.
-
-```bash
-rsync -a --delete site/ dvs-sites:/srv/hominin-atlas/
-```
-
-## 3 · Analytics — and the line in the page
-
-The page ships `<script src="./consent.js" data-ga-id="" defer>`. **The empty id is
-deliberate.** Create the property, then fill it:
-
-1. GA4 property in the **`mcp` account (84487458)**, named with the full domain,
-   retention `FOURTEEN_MONTHS`, key events registered.
-2. Put the measurement id into `site/index.html`'s `data-ga-id`.
-3. `npm test` — the static suite asserts the attribute is present and deferred.
-4. Redeploy.
-
-Nothing loads until this is done, which is correct: with no id the gate finds
-nothing, loads nothing, and the page is a site with no analytics at all.
-
-## 4 · Search Console
-
-Both kinds of property, and the sitemap submitted to both:
-
-```bash
-.venv/bin/python3 ~/.searchconsole_setup.py
-.venv/bin/python3 ~/.seo_audit.py --site hominin-atlas.nodejavascript.com
-.venv/bin/python3 ~/.searchconsole_audit.py
-```
+⚠️ **The static suite failed on this change, and it was right to.** Its assertion
+read *"carries no id until deploy day"* and required `data-ga-id=""` — the
+**pre-deploy state written into a test**. It now asserts a real id, deferred, **and
+that the Google tag is not in the page**, which is the half that actually matters.
 
 ## 5 · The card on the apex
 
-Part 11: every app on the domain has a card on `nodejavascript.com`, added on the
-day it is deployed and kept current with the app. The card's facts (last-committed
-day, stack, outside services) are **generated from the repository**, never typed.
+Registered in `tools/projects.mjs` (with `publicRepo`, because the repository is
+public) and `tools/project-details.mjs`, and the card added to the **Maps** group
+beside Airplane Watch. `npm run dates` generated its facts from the repository:
+`TypeScript · three.js · static page`, and **an empty services list** — a visit makes
+no request to anybody else.
 
-## 6 · The registers
+**Two gates moved with it, and both are inventories meant to fail:** the card count
+**24 → 25**, and the closed stack vocabulary, which gained exactly one word a reader
+already knows (`three.js`).
 
-```bash
-python3 ~/.nodejs_theme_register.py     # theme colour, background, drawing, GA id
-python3 ~/.nodejs_compliance.py --save  # the compliance check
-python3 ~/.nodejs_host_property_check.py
-```
+## 6 · What is still outstanding
 
-Then the Rollbar project, so errors have somewhere to go.
+* **Search Console** — both property kinds and the sitemap submitted to both. The
+  `sc-domain:` property verifies over DNS and could be done at once; the URL-prefix
+  property verifies over `ANALYTICS`, which needs the live page.
+* **The registers** — `~/.nodejs_theme_register.py`, `~/.nodejs_compliance.py --save`,
+  `~/.nodejs_host_property_check.py`, `~/.seo_audit.py`.
+* **Rollbar — DECIDED AGAINST, deliberately, and this is the reason:** the site ships
+  no third-party script at all, and `test/e2e.test.js` counts the requests a visit
+  makes and asserts there are none to Google before an answer. Adding an error
+  reporter would put a third-party request on every page load and contradict both
+  the site's own position and its test. **A project with no client is useless, so
+  there is no Rollbar project here** — not an oversight, a choice, and the same
+  choice record 7 below already describes.
 
-## 7 · What is already true of this site, so it is not forgotten
+---
 
-* **Nothing is loaded from a third party.** three.js, the coastlines and the fonts
-  are all served from this domain. No Google font, no content delivery network.
-* **A visit that refuses makes no request to Google and sets no cookie.** Counted
-  off the network by `test/e2e.test.js`, not read out of the source.
+## 🔴 The two things that went wrong, because both will happen to the next site
+
+1. **A DNS negative cache blocked the certificate for half an hour, and the record was
+   never wrong.** Caddy asked Let's Encrypt **thirteen seconds** after the record was
+   created; Let's Encrypt's resolver got `NXDOMAIN` and cached it for up to
+   **Cloudflare's `SOA MINIMUM`, which is 1800 seconds**. So every retry failed with
+   *"DNS problem: NXDOMAIN looking up A"* while `dig` from this machine answered
+   `172.64.80.1` the whole time. **Create the record, then expect to wait — or accept
+   the half hour. The record is not the fault and re-creating it will not help.**
+
+2. **A Caddy reload cancels an in-flight certificate job.** Deploying the apex runs
+   `systemctl reload caddy` on this same droplet, and it produced *"obtaining
+   certificate: context canceled"* for this site. **A reload takes the running TLS job
+   with it**, so a deploy anywhere on this box can cancel a certificate that was
+   mid-flight for somewhere else. **Sequence the two, or accept the restart.**
+
+---
+
+## 7 · What is true of this site, and stays true
+
+* **Nothing is loaded from a third party.** three.js, the coastlines, the bathymetry
+  and every species picture are all served from this domain — the pictures are
+  downloaded from Wikimedia Commons at **build** time into `site/avatars/`.
+* **A visit that refuses makes no request to Google and sets no cookie** — counted off
+  the network by the end-to-end suite, not read out of the source.
 * **No `privacy.html`** — the policy is a `#privacy` section of the page.
-* **No `www`,** no `.html` in any URL, no Back to top, and the repository line
-  carries the star in the page's own yellow.
+* **No `www`,** no `.html` in any URL, no Back to top, and the repository line carries
+  the star in the page's own yellow.
 * **The theme is its own in all four dimensions:** `#ea580c` over `#140704`, a
   repeating field of chevrons as the abstract, and its own Analytics id.

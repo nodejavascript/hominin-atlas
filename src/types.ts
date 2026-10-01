@@ -86,6 +86,29 @@ export interface Source {
   url?: string;
 }
 
+/** What a click on the map can mean. */
+export interface Selection {
+  kind: 'presence' | 'contact';
+  presence?: Presence;
+  contact?: Contact;
+}
+
+export type SelectHandler = (selection: Selection | null) => void;
+
+/**
+ * The interface both views implement, so the page can hold one or the other and
+ * not care which. If a view needs a method the other cannot honour, it belongs in
+ * that view's own API and not here.
+ */
+export interface MapViewApi {
+  setYears(years: number): void;
+  setFilter(ids: Set<string> | null): void;
+  focusOn(lat: number, lon: number): void;
+  resetView(): void;
+  resize(): void;
+  dispose(): void;
+}
+
 export interface Atlas {
   species: Species[];
   presences: Presence[];

@@ -175,6 +175,17 @@ export const SHELF: ReadonlyArray<{ id: string; label: string; pts: [number, num
 
 // ── lookup helpers ────────────────────────────────────────────────────────────
 
+/**
+ * The youngest locality in the atlas.
+ *
+ * The slider runs to "today", and nothing in this dataset is younger than the
+ * end of the Pleistocene — so the last stretch of the timeline shows a world
+ * with no dots on it. That is the shape of the evidence and not a fault in the
+ * page, but a reader who drags to the right end meets an empty map without being
+ * told why, so the page says so.
+ */
+export const YOUNGEST_LOCALITY = Math.min(...atlas.presences.map((p) => p.to));
+
 /** True when a species is alive at `years`. A range of 0 means it is alive today. */
 export function speciesAlive(s: Species, years: number): boolean {
   return years <= s.from && years >= s.to;

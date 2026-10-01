@@ -1,7 +1,7 @@
 /**
  * app.ts — the page.
  *
- * The globe draws the data; this file is everything around it: the timeline, the
+ * The map draws the data; this file is everything around it: the timeline, the
  * legend, the species bars, and the panel that opens when you click something.
  *
  * Two rules govern the copy that appears here. The first is the house rule — the
@@ -25,9 +25,12 @@ import {
   posAt,
   speciesAlive,
   timeAt,
+  YOUNGEST_LOCALITY,
 } from './atlas';
-import { createGlobe, type Selection } from './globe';
-import type { Contact, Presence, Species } from './types';
+import { createFlatMap } from './flatmap';
+import { createGlobe } from './globe';
+import { contactColour } from './palette';
+import type { Contact, MapViewApi, Presence, Selection, Species } from './types';
 
 function el<T extends HTMLElement>(id: string): T | null {
   return document.getElementById(id) as T | null;
@@ -88,6 +91,7 @@ const yearOut = el<HTMLSpanElement>('yearReadout');
 const eraOut = el<HTMLSpanElement>('eraReadout');
 const seaOut = el<HTMLParagraphElement>('seaReadout');
 const statsOut = el<HTMLDivElement>('stats');
+const recordNote = el<HTMLParagraphElement>('recordNote');
 const slider = must<HTMLInputElement>('timeline');
 const panel = must<HTMLDivElement>('panel');
 const barList = must<HTMLDivElement>('bars');
@@ -115,9 +119,87 @@ function setPanelOpen(open: boolean): void {
 
 const RESOLUTION = 1000;
 
-const globe = createGlobe(globeHost, (selection) => {
+const hoverOut = el<HTMLParagraphElement>('hoverReadout');
+const projectionNote = el<HTMLParagraphElement>('projectionNote');
+
+/**
+ * TWO VIEWS, ONE ATLAS.
+ *
+ * The flat map is the default because it answers the question the page is
+ * actually asking — where did they go — in one picture: the dispersal out of
+ * Africa and the crossing into the Americas are visible at the same time rather
+ * than half a turn apart. The globe is kept because it is the honest shape of the
+ * thing.
+ *
+ * Both implement `MapViewApi`, so nothing below this line knows which one is
+ * running. Only one exists at a time: the other is disposed, so a visitor pays
+ * for one renderer rather than two.
+ */
+type ViewKind = 'flat' | 'globe';
+
+function handleSelect(selection: Selection | null): void {
   if (selection) showSelection(selection);
-});
+  else setPanelOpen(false);
+}
+
+function handleHover(presence: Presence | null): void {
+  if (!hoverOut) return;
+  if (!presence) {
+    hoverOut.hidden = true;
+    hoverOut.textContent = '';
+    return;
+  }
+  const species = atlas.speciesById.get(presence.s);
+  hoverOut.hidden = false;
+  hoverOut.textContent = `${presence.site} · ${species?.common === '—' ? species.name : species?.common ?? ''} · ${formatYears(presence.from)}`;
+}
+
+function buildView(kind: ViewKind): MapViewApi {
+  return kind === 'globe'
+    ? createGlobe(globeHost, handleSelect)
+    : createFlatMap(globeHost, handleSelect, handleHover);
+}
+
+let currentView: ViewKind = 'flat';
+// The attribute goes on BEFORE the renderer is built, because the box the
+// renderer measures is decided by it — the flat map wants a 2:1 plate and the
+// globe wants a viewport-shaped one.
+globeHost.dataset.view = currentView;
+let map: MapViewApi = buildView(currentView);
+
+function syncViewButtons(): void {
+  for (const button of document.querySelectorAll<HTMLButtonElement>('.viewbtn')) {
+    const on = button.dataset.view === currentView;
+    button.classList.toggle('is-on', on);
+    button.setAttribute('aria-pressed', String(on));
+  }
+  if (projectionNote) {
+    projectionNote.textContent =
+      currentView === 'flat'
+        ? 'A flat map shows the whole world at once, and pays for it by stretching the far north and south — Greenland is enormous, and the routes across Beringia are drawn wide. Drag to move, scroll or use + and − to zoom.'
+        : 'The globe keeps the proportions right and shows one hemisphere at a time. Drag to turn it.';
+  }
+}
+
+function setView(kind: ViewKind): void {
+  if (kind === currentView) return;
+  map.dispose();
+  currentView = kind;
+  // The attribute first: the incoming renderer measures the box, and the box is
+  // shaped by which view is showing.
+  globeHost.dataset.view = kind;
+  map = buildView(kind);
+  map.setYears(years);
+  map.setFilter(filter ? new Set([filter]) : null);
+  map.resize();
+  if (hoverOut) hoverOut.hidden = true;
+  syncViewButtons();
+  track('view_change', { view: kind });
+}
+
+for (const button of document.querySelectorAll<HTMLButtonElement>('.viewbtn')) {
+  button.addEventListener('click', () => setView(button.dataset.view as ViewKind));
+}
 
 let years = timeAt(Number(slider.value) / RESOLUTION);
 let filter: string | null = null;
@@ -156,7 +238,7 @@ const bars: BarRow[] = atlas.species.map((s) => {
 
   node.addEventListener('click', () => {
     filter = filter === s.id ? null : s.id;
-    globe.setFilter(filter ? new Set([filter]) : null);
+    map.setFilter(filter ? new Set([filter]) : null);
     syncBars();
     track('species_filter', { species: s.id, active: filter === s.id });
     showSpecies(s);
@@ -186,7 +268,7 @@ for (const s of atlas.species) {
   chip.innerHTML = `<i style="background:${esc(s.colour)}"></i><span>${esc(s.common === '—' ? s.name : s.common)}</span>`;
   chip.addEventListener('click', () => {
     filter = filter === s.id ? null : s.id;
-    globe.setFilter(filter ? new Set([filter]) : null);
+    map.setFilter(filter ? new Set([filter]) : null);
     syncBars();
     syncLegend();
     showSpecies(s);
@@ -229,27 +311,15 @@ function contactRow(c: Contact): HTMLButtonElement {
   button.className = 'contact';
   button.dataset.contact = c.id;
   button.innerHTML =
-    `<span class="contact-kind" style="color:${esc(kindColour(c.kind))}">${esc(CONTACT_KIND_LABEL[c.kind] ?? c.kind)}</span>` +
+    `<span class="contact-kind" style="color:${esc(contactColour(c.kind))}">${esc(CONTACT_KIND_LABEL[c.kind] ?? c.kind)}</span>` +
     `<b>${esc(c.label)}</b>` +
     `<span class="contact-who">${esc(nameOf(a, c.a))}${same ? '' : ` × ${esc(nameOf(b, c.b))}`} · ${esc(formatYears(c.from))}</span>`;
   button.addEventListener('click', () => {
-    globe.focusOn(c.lat, c.lon);
+    map.focusOn(c.lat, c.lon);
     showSelection({ kind: 'contact', contact: c });
     track('contact_open', { contact: c.id, kind: c.kind });
   });
   return button;
-}
-
-function kindColour(kind: string): string {
-  switch (kind) {
-    case 'admixture': return '#ff6bd6';
-    case 'hybrid': return '#ffd166';
-    case 'replacement': return '#ff5a4d';
-    case 'coexistence': return '#7dd3fc';
-    case 'overlap': return '#a7a29b';
-    case 'conflict': return '#ff2f6d';
-    default: return '#ffffff';
-  }
 }
 
 for (const c of atlas.contacts) contactsHost?.appendChild(contactRow(c));
@@ -283,6 +353,17 @@ function syncReadout(): void {
       `<span><b>${events.length}</b> recorded ${events.length === 1 ? 'contact' : 'contacts'} in progress</span>`;
   }
 
+  if (recordNote) {
+    // The youngest locality here is 10,000 years old, so the right-hand end of
+    // the slider shows a world with nothing on it. That is the evidence and not
+    // a broken map — but without a sentence, it reads as broken.
+    const past = years < YOUNGEST_LOCALITY;
+    recordNote.hidden = !past;
+    if (past) {
+      recordNote.textContent = `Nothing in this atlas is younger than ${formatYears(YOUNGEST_LOCALITY)}. The record here is the fossil and archaeological evidence of hominin evolution, and it stops there because what follows is history rather than evolution.`;
+    }
+  }
+
   if (seaOut) {
     if (years > GLACIAL_RECORD_STARTS) {
       seaOut.textContent =
@@ -306,15 +387,15 @@ function syncReadout(): void {
   if (marker) marker.style.left = `${(Number(slider?.value ?? 0) / RESOLUTION) * 100}%`;
   syncBars();
   syncContacts();
-  if (globeHost) globeHost.dataset.years = String(Math.round(years));
+  globeHost.dataset.years = String(Math.round(years));
 }
 
 let lastBucket = -1;
 function applyYears(next: number): void {
   years = Math.min(6_000_000, Math.max(0, next));
   const pos = Math.round(posAt(years) * RESOLUTION);
-  if (slider && slider.value !== String(pos)) slider.value = String(pos);
-  globe.setYears(years);
+  if (slider.value !== String(pos)) slider.value = String(pos);
+  map.setYears(years);
   syncReadout();
 
   // One event per twentieth of the slider rather than one per animation frame:
@@ -428,7 +509,7 @@ function showSelection(selection: Selection): void {
       `</dl>` +
       `<h4>Sources</h4><ul class="refs">${sourcesHtml(p.src)}</ul>`;
     wirePanelClose();
-    globe.focusOn(p.lat, p.lon);
+    map.focusOn(p.lat, p.lon);
     track('locality_open', { site: p.id, species: p.s, confidence: p.c, pop_basis: p.pb });
     return;
   }
@@ -438,7 +519,7 @@ function showSelection(selection: Selection): void {
     const b = atlas.speciesById.get(c.b);
     setPanelOpen(true);
     panel.innerHTML =
-      `<div class="panel-head" style="--accent:${esc(kindColour(c.kind))}">` +
+      `<div class="panel-head" style="--accent:${esc(contactColour(c.kind))}">` +
       `<button class="panel-close" type="button" aria-label="Close">×</button>` +
       `<h3>${esc(c.label)}</h3>` +
       `<p class="panel-sub">${esc(CONTACT_KIND_LABEL[c.kind] ?? c.kind)} · ${esc(formatSpan(c.from, c.to))}</p>` +
@@ -510,9 +591,10 @@ if (sourceList) {
     .join('');
 }
 
-globe.setYears(years);
+map.setYears(years);
 syncReadout();
 syncLegend();
+syncViewButtons();
 
 // A deep link to a moment, so a claim on this page can be linked to directly:
 // /?at=45000 opens the map at 45,000 years ago.

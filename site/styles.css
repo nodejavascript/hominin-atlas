@@ -290,19 +290,129 @@ p {
 }
 
 .globe {
+  position: relative;
   width: 100%;
   height: clamp(340px, 58vh, 620px);
 }
 
-.globe canvas {
+/* The flat map is a 2:1 plate, so the box takes the same shape and stops
+   cropping the poles the way a viewport-shaped box would. */
+.globe[data-view="flat"] {
+  height: auto;
+  aspect-ratio: 2 / 1;
+  min-height: 300px;
+}
+
+.globe .globecanvas {
   display: block;
   width: 100%;
   height: 100%;
   cursor: grab;
 }
 
-.globe canvas:active {
+.globe .globecanvas:active {
   cursor: grabbing;
+}
+
+.globe .flatcanvas {
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+.globe .flatcanvas:active {
+  cursor: grabbing;
+}
+
+.viewswitch {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--card-line);
+  background: rgba(12, 6, 4, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.viewbtn {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 13px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  color: var(--muted);
+  background: transparent;
+}
+
+.viewbtn:hover {
+  color: var(--text);
+}
+
+.viewbtn.is-on {
+  color: #1b0d04;
+  background: var(--accent);
+  font-weight: 600;
+}
+
+.mapzoom {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--card-line);
+  background: rgba(12, 6, 4, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.mapzoom button {
+  min-width: 30px;
+  border: 0;
+  border-radius: 7px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.mapzoom button:hover {
+  background: rgba(234, 88, 12, 0.35);
+}
+
+.hover-readout {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  max-width: min(70%, 420px);
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--card-line);
+  background: rgba(12, 6, 4, 0.82);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.globe[data-view="flat"] .hover-readout {
+  bottom: 46px;
+}
+
+.projection-note {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--muted);
 }
 
 .globe-hud {
@@ -337,6 +447,17 @@ p {
   justify-content: flex-end;
   gap: 4px;
   max-width: min(86%, 740px);
+}
+
+/* On the flat plate the legend would lie across Africa and southern Asia —
+   hiding the very localities it is the key to. So it goes UNDER the map instead
+   of on it: no land covered, and every species named. */
+.globe[data-view="flat"] ~ .globe-legend {
+  position: static;
+  justify-content: flex-start;
+  max-width: none;
+  padding: 10px 12px 13px;
+  border-top: 1px solid var(--card-line);
 }
 
 .chip {
@@ -496,6 +617,17 @@ p {
   font-size: 13.5px;
   color: var(--muted);
   border-left: 2px solid var(--hairline);
+  padding-left: 12px;
+}
+
+/* Shown only when the selected time is younger than anything in the data, so an
+   empty map comes with the reason it is empty rather than reading as a fault. */
+.record-note {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  border-left: 2px solid var(--accent);
   padding-left: 12px;
 }
 
@@ -951,13 +1083,37 @@ p {
     height: 58vh;
   }
 
+  .globe[data-view="flat"] {
+    height: auto;
+    aspect-ratio: 3 / 2;
+    min-height: 240px;
+  }
+
+  .viewswitch {
+    top: auto;
+    bottom: 10px;
+    right: 10px;
+  }
+
+  .viewbtn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
   .globe-hud {
     left: 12px;
     top: 10px;
   }
 
-  .globe-legend {
+  /* The key is hidden on the globe, where it would eat a phone-sized sphere and
+     the map is decorative at that size. On the flat plate it sits below the map,
+     where it costs nothing to scroll past and is the only way to read the dots. */
+  .globe[data-view="globe"] ~ .globe-legend {
     display: none;
+  }
+
+  .globe[data-view="flat"] ~ .globe-legend {
+    padding: 8px 10px 10px;
   }
 
   .stations {

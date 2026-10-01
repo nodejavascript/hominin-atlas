@@ -22,62 +22,26 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { feature } from 'topojson-client';
-import land from 'world-atlas/land-50m.json';
 
-import {
-  atlas,
-  isLowSea,
-  lifeFraction,
-  SHELF as SHELF_SHAPES,
-  speciesAlive,
-} from './atlas';
-import type { Contact, ContactKind, Presence } from './types';
+import { atlas, isLowSea, lifeFraction, speciesAlive } from './atlas';
+import { buildBase, loadLandPolygons } from './mapdraw';
+import { CONTACT_COLOUR, popWeight } from './palette';
+import type { Contact, MapViewApi, Presence, Selection, SelectHandler } from './types';
 
 const R = 1;
-const W = 2048;
-const H = 1024;
 
-const OCEAN = '#0f1620';
-const LAND = '#4a3b28';
-const LAND_EDGE = '#7d6547';
-const SHELF_FILL = 'rgba(214, 140, 60, 0.32)';
-const SHELF_EDGE = 'rgba(245, 176, 88, 0.55)';
+export type { Selection, SelectHandler };
 
-const CONTACT_COLOUR: Record<ContactKind, string> = {
-  admixture: '#ff6bd6',
-  hybrid: '#ffd166',
-  replacement: '#ff5a4d',
-  coexistence: '#7dd3fc',
-  overlap: '#a7a29b',
-  conflict: '#ff2f6d',
-};
-
-export interface Selection {
-  kind: 'presence' | 'contact';
-  presence?: Presence;
-  contact?: Contact;
-}
-
-export interface GlobeApi {
-  setYears(years: number): void;
-  setFilter(ids: Set<string> | null): void;
-  focusOn(lat: number, lon: number): void;
-  resetView(): void;
-  resize(): void;
-  dispose(): void;
-}
-
-export type SelectHandler = (selection: Selection | null) => void;
+/** The globe honours the shared map interface and nothing more. */
+export type GlobeApi = MapViewApi;
 
 // ── projection ────────────────────────────────────────────────────────────────
 
-function lonToX(lon: number): number {
-  return ((lon + 180) / 360) * W;
-}
-
-function latToY(lat: number): number {
-  return ((90 - lat) / 180) * H;
+function asTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
 }
 
 /** Latitude and longitude to a point on a sphere of radius r. */
@@ -89,102 +53,6 @@ function ll2v(lat: number, lon: number, r: number): THREE.Vector3 {
     r * Math.cos(phi),
     r * Math.sin(phi) * Math.sin(theta),
   );
-}
-
-// ── the map texture ───────────────────────────────────────────────────────────
-
-type Pt = [number, number];
-type Ring = Pt[];
-type Poly = Ring[];
-
-function drawLand(ctx: CanvasRenderingContext2D, polygons: Poly[]): void {
-  ctx.fillStyle = LAND;
-  ctx.beginPath();
-  for (const polygon of polygons) {
-    for (const ring of polygon) {
-      if (ring.length < 3) continue;
-      const first = ring[0]!;
-      ctx.moveTo(lonToX(first[0]), latToY(first[1]));
-      for (let i = 1; i < ring.length; i++) {
-        const pt = ring[i]!;
-        ctx.lineTo(lonToX(pt[0]), latToY(pt[1]));
-      }
-      ctx.closePath();
-    }
-  }
-  ctx.fill('evenodd');
-  ctx.strokeStyle = LAND_EDGE;
-  ctx.lineWidth = 1.1;
-  ctx.stroke();
-}
-
-function drawGraticule(ctx: CanvasRenderingContext2D): void {
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for (let lon = -180; lon <= 180; lon += 30) {
-    ctx.moveTo(lonToX(lon), 0);
-    ctx.lineTo(lonToX(lon), H);
-  }
-  for (let lat = -60; lat <= 60; lat += 30) {
-    ctx.moveTo(0, latToY(lat));
-    ctx.lineTo(W, latToY(lat));
-  }
-  ctx.stroke();
-}
-
-function drawShelf(ctx: CanvasRenderingContext2D, offsets: number[]): void {
-  for (const offset of offsets) {
-    for (const shelf of SHELF_SHAPES) {
-      ctx.beginPath();
-      for (let i = 0; i < shelf.pts.length; i++) {
-        const [lon, lat] = shelf.pts[i]!;
-        const x = lonToX(lon + offset);
-        const y = latToY(lat);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.closePath();
-      ctx.fillStyle = SHELF_FILL;
-      ctx.fill();
-      ctx.strokeStyle = SHELF_EDGE;
-      ctx.lineWidth = 1.4;
-      ctx.stroke();
-    }
-  }
-}
-
-function makeTexture(withShelf: boolean, polygons: Poly[]): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('no 2d context');
-
-  ctx.fillStyle = OCEAN;
-  ctx.fillRect(0, 0, W, H);
-  drawLand(ctx, polygons);
-  drawGraticule(ctx);
-  if (withShelf) drawShelf(ctx, [0, -360, 360]);
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  return tex;
-}
-
-function landPolygons(): Poly[] {
-  const topology = land as unknown as { objects: { land: unknown } };
-  const collection = feature(topology as never, topology.objects.land as never) as unknown as {
-    features: { geometry: { type: string; coordinates: unknown } }[];
-  };
-  const out: Poly[] = [];
-  for (const f of collection.features) {
-    const g = f.geometry;
-    if (g.type === 'Polygon') out.push(g.coordinates as Poly);
-    else if (g.type === 'MultiPolygon') out.push(...(g.coordinates as Poly[]));
-  }
-  return out;
 }
 
 // ── the globe ─────────────────────────────────────────────────────────────────
@@ -206,17 +74,19 @@ export function createGlobe(container: HTMLElement, onSelect: SelectHandler): Gl
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.domElement.classList.add('globecanvas');
   container.appendChild(renderer.domElement);
 
   const globe = new THREE.Group();
   globe.rotation.order = 'YXZ';
   scene.add(globe);
 
-  const polygons = landPolygons();
-  // Built once. The shelf is the only thing that changes with the timeline, so
-  // there are exactly two textures and the globe swaps between them.
-  const texPlain = makeTexture(false, polygons);
-  const texShelf = makeTexture(true, polygons);
+  // The base map is painted once, twice — with and without the glacial shelf —
+  // and the globe swaps between the two textures as the timeline crosses into
+  // and out of a glacial period.
+  const polygons = loadLandPolygons();
+  const texPlain = asTexture(buildBase(polygons, { shelf: false }));
+  const texShelf = asTexture(buildBase(polygons, { shelf: true }));
 
   const surface = new THREE.Mesh(
     new THREE.SphereGeometry(R, 128, 80),
@@ -417,9 +287,8 @@ export function createGlobe(container: HTMLElement, onSelect: SelectHandler): Gl
   }
 
   function dotScale(p: Presence): number {
-    if (p.pop === null) return 0.0055;
-    const t = Math.min(1, Math.max(0, p.pop / 12000));
-    return 0.0055 + 0.019 * Math.sqrt(t);
+    // A locality with no estimate weighs nothing, so it lands on the minimum.
+    return 0.0055 + 0.019 * popWeight(p.pop);
   }
 
   function resize(): void {

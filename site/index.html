@@ -172,13 +172,27 @@
         </p>
       </section>
 
-      <section id="map" class="map" aria-label="Globe of hominin distribution">
+      <section id="map" class="map" aria-label="Map of hominin distribution and migration">
         <div class="globe-wrap">
-          <div id="globe" class="globe"></div>
+          <div id="globe" class="globe" data-view="flat"></div>
+          <div class="viewswitch" role="group" aria-label="Map projection">
+            <button
+              class="viewbtn is-on"
+              type="button"
+              data-view="flat"
+              aria-pressed="true"
+            >
+              Flat map
+            </button>
+            <button class="viewbtn" type="button" data-view="globe" aria-pressed="false">
+              Globe
+            </button>
+          </div>
           <div class="globe-hud">
             <p class="year"><span id="yearReadout">300 thousand years ago</span></p>
             <p class="era" id="eraReadout">Pleistocene</p>
           </div>
+          <p class="hover-readout" id="hoverReadout" hidden></p>
           <div class="globe-legend" id="legend" aria-label="Species colour key"></div>
         </div>
 
@@ -198,7 +212,9 @@
           </div>
           <div class="stations" id="stations"></div>
           <div class="stats" id="stats"></div>
+          <p class="record-note" id="recordNote" hidden></p>
           <p class="sea" id="seaReadout"></p>
+          <p class="projection-note" id="projectionNote"></p>
         </div>
 
         <aside class="panel" id="panel" hidden aria-live="polite"></aside>

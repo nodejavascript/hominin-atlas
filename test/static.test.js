@@ -249,3 +249,43 @@ test('the bundle was built and is not a stub', () => {
   assert.match(gate, /analytics_consent/);
   assert.match(gate, /consentBtn/);
 });
+
+test('the map offers both projections, and the flat one is what loads', () => {
+  // The 2D plate is the default view; the globe is one click away and nothing
+  // about the dataset depends on which one is showing.
+  const host = html.match(/<div id="globe"[^>]*>/)?.[0] ?? '';
+  assert.match(host, /data-view="flat"/, 'the flat map is not the opening view');
+
+  const buttons = [...html.matchAll(/<button[^>]*class="viewbtn[^"]*"[^>]*>([\s\S]*?)<\/button>/g)];
+  assert.equal(buttons.length, 2, `the view switch has ${buttons.length} buttons, and wants two`);
+  const views = buttons.map((b) => b[0].match(/data-view="([^"]+)"/)?.[1]);
+  assert.deepEqual(views, ['flat', 'globe']);
+
+  // Exactly one is on, and it is the one the host declares.
+  const on = buttons.filter((b) => /aria-pressed="true"/.test(b[0]));
+  assert.equal(on.length, 1, `${on.length} of the view buttons claim to be selected`);
+  assert.match(on[0][0], /data-view="flat"/);
+  assert.match(buttons[1][0], /aria-pressed="false"/, 'the globe button must not start selected');
+});
+
+test('the map states its projection and its hover readout', () => {
+  // A flat map stretches the far north and south. Saying so is part of the
+  // honesty rule, and the readout is what a keyboard visitor reads instead of a
+  // tooltip they cannot see.
+  assert.match(html, /id="projectionNote"/, 'nothing on the page explains the projection');
+  assert.match(html, /id="hoverReadout"[^>]*hidden/, 'the hover readout must start empty');
+  assert.match(
+    html,
+    /id="recordNote"[^>]*hidden/,
+    'nothing on the page explains an empty map at the young end of the timeline',
+  );
+  assert.match(
+    css,
+    /\.globe\[data-view="flat"\][\s\S]{0,120}aspect-ratio/,
+    'the flat box does not take the shape of its own plate',
+  );
+  assert.ok(
+    !/\.globe canvas\b/.test(css),
+    'a bare `.globe canvas` rule would fight the flat map, whose size is set in code',
+  );
+});

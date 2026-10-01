@@ -202,45 +202,73 @@ export function routesAt(years: number): Route[] {
 export function contactsAt(years: number): Contact[] {
   return atlas.contacts.filter((c) => years <= c.from && years >= c.to);
 }
-
 export function speciesAliveAt(years: number): Species[] {
   return atlas.species.filter((s) => speciesAlive(s, years));
 }
 
 /**
- * What a locality is doing in the record at one moment.
+ * What a mark is doing in the record at one moment.
  *
  * `coming` — it has not been reached yet, or its species is already gone.
- * `live`   — it is occupied at this moment.
- * `trail`  — it was occupied and is not any more, but its species still stands.
+ * `live`   — it belongs to this moment.
+ * `trail`  — it is past, but its species still stands.
  *
- * The trail is the whole reason this exists. A dot that vanished the moment its
- * own window closed left the map holding a handful of marks with no history on
+ * The trail is the whole reason this exists. A mark that vanished the moment its
+ * own window closed left the map holding a handful of dots with no history on
  * them: the dispersal out of Africa looked like a scatter rather than a movement.
- * Held open until the species itself goes, the dots accumulate, and the density
+ * Held open until the species itself goes, the marks accumulate, and the density
  * and the direction of a migration are legible in a single picture.
+ *
+ * Localities and migration routes have the same shape of window, so both answer
+ * to this one rule and the map cannot draw one of them by a different logic.
  */
-export type PresenceStage = 'coming' | 'live' | 'trail';
+export type RecordStage = 'coming' | 'live' | 'trail';
+
+export function recordStage(
+  species: Species | undefined,
+  from: number,
+  to: number,
+  years: number,
+): RecordStage {
+  if (!species) return 'coming';
+  // The species is extinct at this moment, so nothing of it is on the map.
+  if (years < species.to) return 'coming';
+  // Not reached yet.
+  if (years > from) return 'coming';
+  return years >= to ? 'live' : 'trail';
+}
 
 export function presenceStage(
   p: Presence,
   species: Species | undefined,
   years: number,
-): PresenceStage {
-  if (!species) return 'coming';
-  // The species is extinct at this moment, so nothing of it is on the map.
-  if (years < species.to) return 'coming';
-  // Not reached yet.
-  if (years > p.from) return 'coming';
-  if (years >= p.to) return 'live';
-  return 'trail';
+): RecordStage {
+  return recordStage(species, p.from, p.to, years);
 }
 
-/** How strongly a trail dot is drawn, against a live one. */
+/** How strongly a trail mark is drawn, against a live one. */
 export const TRAIL_ALPHA = 0.42;
 
-/** How long a dot takes to grow into place when it first appears, in ms. */
+/** How long a mark takes to grow into place when it first appears, in ms. */
 export const ARRIVE_MS = 700;
+
+/**
+ * The colloquial label — "the hobbit", "Nutcracker Man" — or an empty string
+ * when a species has none.
+ *
+ * These are kept apart from the name on purpose. The page prints the binomial,
+ * because that is the name, and the nickname beside it in brackets, because that
+ * is what people call it. The two are not interchangeable and one is not a
+ * substitute for the other, so the field is read in exactly one place.
+ */
+export function nickname(s: Species): string {
+  return s.common === '\u2014' ? '' : s.common;
+}
+
+/** Where a species' avatar is served from. Drawn by tools/make-avatars.py. */
+export function speciesAvatar(id: string): string {
+  return `./avatars/${id}.png`;
+}
 
 // ── display helpers ───────────────────────────────────────────────────────────
 

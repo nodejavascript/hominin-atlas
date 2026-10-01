@@ -174,7 +174,9 @@
 
       <section id="map" class="map" aria-label="Map of hominin distribution and migration">
         <div class="globe-wrap">
-          <div id="globe" class="globe" data-view="flat"></div>
+          <div id="globe" class="globe" data-view="flat">
+            <div class="hover-readout" id="hoverReadout" hidden></div>
+          </div>
           <div class="viewswitch" role="group" aria-label="Map projection">
             <button
               class="viewbtn is-on"
@@ -192,7 +194,6 @@
             <p class="year"><span id="yearReadout">300 thousand years ago</span></p>
             <p class="era" id="eraReadout">Pleistocene</p>
           </div>
-          <p class="hover-readout" id="hoverReadout" hidden></p>
           <div class="globe-legend" id="legend" aria-label="Species colour key"></div>
         </div>
 
@@ -225,10 +226,12 @@
         <h2>Who was alive, and when</h2>
         <p class="note">
           The strip below uses the same scale as the slider, so the vertical line
-          is the moment on the globe. A bar is a species' whole known range.
+          is the moment on the map. A bar is a species' whole known range.
         </p>
         <div class="bars" id="bars">
-          <div class="bar-marker" id="barMarker" aria-hidden="true"></div>
+          <div class="bar-marker-layer" aria-hidden="true">
+            <div class="bar-marker" id="barMarker"></div>
+          </div>
         </div>
       </section>
 

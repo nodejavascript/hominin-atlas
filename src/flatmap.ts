@@ -18,7 +18,7 @@ import {
   ARRIVE_MS,
   isLowSea,
   presenceStage,
-  speciesAlive,
+  recordStage,
   TRAIL_ALPHA,
 } from './atlas';
 import { BASE_H, BASE_W, buildBase, loadLandPolygons, splitAtSeam, uv } from './mapdraw';
@@ -153,20 +153,29 @@ export function createFlatMap(
     const k = scale();
 
     // ── routes ──────────────────────────────────────────────────────────────
+    //
+    // A route is drawn from the moment it is first walked and stays while its
+    // species stands, for the same reason the dots do: a line that disappears
+    // leaves no trail, and the trail is the whole picture.
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    let threads = 0;
     for (const route of atlas.routes) {
       const species = atlas.speciesById.get(route.s);
-      if (!species || !speciesAlive(species, years)) continue;
-      if (years > route.from || years < route.to) continue;
-      const span = Math.max(1, route.from - route.to);
-      const through = (route.from - years) / span;
-      const ramp = Math.min(1, Math.min(through, 1 - through) / 0.15);
-      if (ramp <= 0) continue;
+      const stage = recordStage(species, route.from, route.to, years);
+      if (stage === 'coming') continue;
       if (filter && !filter.has(route.s)) continue;
 
-      ctx.strokeStyle = species.colour;
-      ctx.globalAlpha = ramp * 0.72;
+      const span = Math.max(1, route.from - route.to);
+      const through = (route.from - years) / span;
+      // Fade in as it begins, and then stay.
+      const ramp = stage === 'trail' ? 1 : Math.min(1, Math.max(0, through / 0.15));
+      if (ramp <= 0) continue;
+      threads += 1;
+      const weight = stage === 'live' ? 0.72 : 0.72 * TRAIL_ALPHA;
+
+      ctx.strokeStyle = species?.colour ?? '#fff';
+      ctx.globalAlpha = ramp * weight;
       ctx.lineWidth = Math.max(1, 1.5 * k);
       for (const run of splitAtSeam(route.pts)) {
         ctx.beginPath();
@@ -282,6 +291,7 @@ export function createFlatMap(
     // numbers are the whole of what the trail and the arrival animation claim.
     container.dataset.dots = String(hit.length);
     container.dataset.arriving = String(arriving);
+    container.dataset.routes = String(threads);
   }
 
   // ── picking ───────────────────────────────────────────────────────────────

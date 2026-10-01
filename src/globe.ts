@@ -23,7 +23,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-import { atlas, ARRIVE_MS, isLowSea, presenceStage, speciesAlive, TRAIL_ALPHA } from './atlas';
+import { atlas, ARRIVE_MS, isLowSea, presenceStage, recordStage, TRAIL_ALPHA } from './atlas';
 import { buildBase, loadLandPolygons } from './mapdraw';
 import { CONTACT_COLOUR, popWeight } from './palette';
 import type { Contact, MapViewApi, Presence, Selection, SelectHandler } from './types';
@@ -57,7 +57,11 @@ function ll2v(lat: number, lon: number, r: number): THREE.Vector3 {
 
 // ── the globe ─────────────────────────────────────────────────────────────────
 
-export function createGlobe(container: HTMLElement, onSelect: SelectHandler): GlobeApi {
+export function createGlobe(
+  container: HTMLElement,
+  onSelect: SelectHandler,
+  onHover?: (presence: Presence | null) => void,
+): GlobeApi {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#120703');
 
@@ -226,10 +230,22 @@ export function createGlobe(container: HTMLElement, onSelect: SelectHandler): Gl
 
   renderer.domElement.addEventListener('pointermove', (event) => {
     const hit = pick(event);
+    // Published for the page's own tests, the same way the dot count is: a
+    // screenshot can show a card and cannot say whether the picking itself
+    // found the dot that raised it.
+    container.dataset.hover = hit ? '1' : '0';
     if (hit !== hovered) {
       hovered = hit;
       renderer.domElement.style.cursor = hit ? 'pointer' : 'grab';
+      onHover?.((hit?.userData.presence as Presence | undefined) ?? null);
     }
+  });
+
+  renderer.domElement.addEventListener('pointerleave', () => {
+    if (!hovered) return;
+    hovered = null;
+    renderer.domElement.style.cursor = 'grab';
+    onHover?.(null);
   });
 
   renderer.domElement.addEventListener('click', (event) => {
@@ -274,17 +290,19 @@ export function createGlobe(container: HTMLElement, onSelect: SelectHandler): Gl
     // See the note in flatmap.ts: the counts the trail and the arrival animation
     // are claimed on, published for the page's own tests.
     container.dataset.dots = String(dots.reduce((n, d) => n + (d.visible ? 1 : 0), 0));
+    container.dataset.routes = String(routes.reduce((n, m) => n + (m.visible ? 1 : 0), 0));
 
     for (let i = 0; i < routes.length; i++) {
       const mesh = routes[i]!;
       const r = mesh.userData.route as (typeof atlas.routes)[number];
       const species = atlas.speciesById.get(r.s);
-      const alive = species ? speciesAlive(species, years) : false;
-      mesh.visible = alive && years <= r.from && years >= r.to && (!filter || filter.has(r.s));
+      const stage = recordStage(species, r.from, r.to, years);
+      mesh.visible = stage !== 'coming' && (!filter || filter.has(r.s));
       const span = Math.max(1, r.from - r.to);
-      const at = (r.from - years) / span;
-      const ramp = Math.min(1, Math.min(at, 1 - at) / 0.15);
-      (mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, ramp) * 0.7;
+      const through = (r.from - years) / span;
+      const ramp = stage === 'trail' ? 1 : Math.min(1, Math.max(0, through / 0.15));
+      (mesh.material as THREE.MeshBasicMaterial).opacity =
+        ramp * (stage === 'live' ? 0.7 : 0.7 * TRAIL_ALPHA);
     }
 
     for (let i = 0; i < contacts.length; i++) {

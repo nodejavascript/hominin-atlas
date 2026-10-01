@@ -253,13 +253,29 @@ test('the timeline can be played and started over', () => {
   );
 });
 
-test('the page names species, and never the nickname beside them', () => {
-  // The data still carries a colloquial label for some species — "The Hobbit",
-  // "Nutcracker Man" — and the page stopped printing them. This guards the
-  // rendering, because the label lives on in the JSON and is one typo away from
-  // coming back onto the screen.
+test('the nickname is printed beside the name, never instead of it', () => {
+  // The data carries a colloquial label for some species — "The Hobbit",
+  // "Nutcracker Man" — and the page used to print that ALONE, so the reader met
+  // a nickname where a species name should be. It is now read in exactly one
+  // place, `nickname()`, and always in brackets after the name.
   const app = readFileSync(join(root, 'src', 'app.ts'), 'utf8');
-  assert.ok(!/\.common\b/.test(app), 'the page prints the colloquial label again');
+  assert.ok(!/\.common\b/.test(app), 'the page reads the colloquial label directly');
+
+  const atlas = readFileSync(join(root, 'src', 'atlas.ts'), 'utf8');
+  assert.match(atlas, /export function nickname\(/, 'nothing exposes the nickname');
+
+  // Everywhere a species is named, the nickname is bracketed beside it.
+  const bracketed = app.match(/class="nick">\(/g) ?? [];
+  assert.ok(bracketed.length >= 3, `only ${bracketed.length} places bracket the nickname`);
+});
+
+test('every species has an avatar, drawn from its own record', () => {
+  const species = JSON.parse(readFileSync(join(root, 'src', 'data', 'species.json'), 'utf8')).species;
+  for (const s of species) {
+    const file = join(root, 'site', 'avatars', `${s.id}.png`);
+    assert.ok(existsSync(file), `there is no avatar for ${s.name}`);
+    assert.ok(statSync(file).size > 200, `the avatar for ${s.name} is empty`);
+  }
 });
 
 test('the bundle was built and is not a stub', () => {

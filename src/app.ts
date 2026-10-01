@@ -21,11 +21,13 @@ import {
   GLACIAL_RECORD_STARTS,
   isLowSea,
   MAX_YA,
+  nickname,
   POP_BASIS_LABEL,
   POP_BASIS_NOTE,
   posAt,
   presenceStage,
   speciesAlive,
+  speciesAvatar,
   timeAt,
   YOUNGEST_LOCALITY,
 } from './atlas';
@@ -122,7 +124,7 @@ function setPanelOpen(open: boolean): void {
 
 const RESOLUTION = 1000;
 
-const hoverOut = el<HTMLParagraphElement>('hoverReadout');
+const hoverOut = el<HTMLDivElement>('hoverReadout');
 const projectionNote = el<HTMLParagraphElement>('projectionNote');
 
 /**
@@ -149,17 +151,28 @@ function handleHover(presence: Presence | null): void {
   if (!hoverOut) return;
   if (!presence) {
     hoverOut.hidden = true;
-    hoverOut.textContent = '';
+    hoverOut.replaceChildren();
     return;
   }
   const species = atlas.speciesById.get(presence.s);
+  const nick = species ? nickname(species) : '';
   hoverOut.hidden = false;
-  hoverOut.textContent = `${presence.site} · ${species?.name ?? ''} · ${formatYears(presence.from)}`;
+  // The avatar, the name and the nickname — the three things that say which of
+  // twenty-three hominins this dot is, without asking the reader to hold a
+  // colour in their head.
+  hoverOut.innerHTML =
+    `<img class="hover-avatar" src="${esc(speciesAvatar(presence.s))}" alt="" width="34" height="34">` +
+    `<span class="hover-body">` +
+    `<span class="hover-species"><i class="sp">${esc(species?.name ?? presence.s)}</i>` +
+    (nick ? ` <span class="nick">(${esc(nick)})</span>` : '') +
+    `</span>` +
+    `<span class="hover-where">${esc(presence.site)} · ${esc(formatYears(presence.from))}</span>` +
+    `</span>`;
 }
 
 function buildView(kind: ViewKind): MapViewApi {
   return kind === 'globe'
-    ? createGlobe(globeHost, handleSelect)
+    ? createGlobe(globeHost, handleSelect, handleHover)
     : createFlatMap(globeHost, handleSelect, handleHover);
 }
 
@@ -229,23 +242,39 @@ interface BarRow {
 const bars: BarRow[] = atlas.species.map((s) => {
   const left = posAt(s.from) * 100;
   const right = posAt(s.to) * 100;
+  const nick = nickname(s);
+
   const node = document.createElement('button');
   node.type = 'button';
   node.className = 'bar';
-  node.setAttribute('aria-pressed', 'false');
-  node.title = `${s.name} — ${formatSpan(s.from, s.to)}`;
+  node.title = `${s.name}${nick ? ` (${nick})` : ''} — ${formatSpan(s.from, s.to)}`;
 
+  // The identity column: the avatar, then the name and the nickname beside it.
+  // The name is allowed to wrap, which is what makes room for the avatar at all.
+  //
+  // The avatars are not deferred: the whole set is under 200 kB and the chart is
+  // a single screen of them, so an avatar that arrives late arrives while the
+  // reader is already reading the column it belongs to.
+  const id = document.createElement('span');
+  id.className = 'bar-id';
+  id.innerHTML =
+    `<img class="bar-avatar" src="${esc(speciesAvatar(s.id))}" alt="" width="26" height="26">` +
+    `<span class="bar-name"><i class="sp">${esc(s.name)}</i>` +
+    (nick ? ` <span class="nick">(${esc(nick)})</span>` : '') +
+    `</span>`;
+  node.appendChild(id);
+
+  // The track is its own cell, so the bar can never run under the name — which
+  // is exactly what it used to do, and what made the chart hard to read.
+  const axis = document.createElement('span');
+  axis.className = 'bar-track';
   const fill = document.createElement('span');
   fill.className = 'bar-fill';
   fill.style.left = `${left}%`;
   fill.style.width = `${Math.max(0.35, right - left)}%`;
   fill.style.background = s.colour;
-  node.appendChild(fill);
-
-  const label = document.createElement('span');
-  label.className = 'bar-label';
-  label.innerHTML = `<i class="sp">${esc(s.name)}</i>`;
-  node.appendChild(label);
+  axis.appendChild(fill);
+  node.appendChild(axis);
 
   node.addEventListener('click', () => {
     showSpecies(s);
@@ -306,12 +335,17 @@ showAll.addEventListener('click', () => {
 legend.appendChild(showAll);
 
 for (const s of atlas.species) {
+  const nick = nickname(s);
   const chip = document.createElement('button');
   chip.type = 'button';
   chip.className = 'chip';
   chip.dataset.species = s.id;
-  chip.title = `Show or hide ${s.name} on the map`;
-  chip.innerHTML = `<i style="background:${esc(s.colour)}"></i><span class="sp">${esc(s.name)}</span>`;
+  chip.title = `Show or hide ${s.name}${nick ? ` (${nick})` : ''} on the map`;
+  chip.innerHTML =
+    `<i style="background:${esc(s.colour)}"></i>` +
+    `<span class="chip-name"><span class="sp">${esc(s.name)}</span>` +
+    (nick ? ` <span class="nick">(${esc(nick)})</span>` : '') +
+    `</span>`;
   chip.addEventListener('click', () => toggleSpecies(s));
   legend.appendChild(chip);
 }

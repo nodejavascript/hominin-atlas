@@ -19,6 +19,7 @@ import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { readFileSync } from 'node:fs';
 
 import { chromium } from 'playwright';
 
@@ -497,15 +498,26 @@ test('a species can be switched off the map, and back on', async () => {
   assert.equal(await dots(), all, 'showing every species did not restore the map');
 });
 
-test('a locality stays on the map after its own window closes', async () => {
+test('a locality and a route both stay after their own window closes', async () => {
   // This is the trail. A dot used to vanish the moment its own window shut, so
-  // the map held a scatter rather than a movement; it now stays until its
-  // species is gone, which is what makes density and direction legible.
+  // the map held a scatter rather than a movement; both it and the route it
+  // belongs to now stay until the species is gone, which is what makes density
+  // and direction legible.
+  const species = JSON.parse(readFileSync(join(root, 'src', 'data', 'species.json'), 'utf8')).species;
+  const routes = JSON.parse(readFileSync(join(root, 'src', 'data', 'routes.json'), 'utf8')).routes;
+  const byId = new Map(species.map((s) => [s.id, s]));
+  // A route fades in from nothing at the instant it begins, so it is drawn from
+  // just after its own start until its species is gone.
+  const expectedRoutes = (years) =>
+    routes.filter((r) => r.from > years && years >= (byId.get(r.s)?.to ?? 0)).length;
+  const liveRoutes = (years) => routes.filter((r) => years <= r.from && years >= r.to).length;
+
   const counts = async (at) => {
     await page.goto(`${BASE}?at=${at}`, { waitUntil: 'load' });
     await sleep(1100);
     return page.evaluate(() => ({
       drawn: Number(document.getElementById('globe').dataset.dots),
+      lines: Number(document.getElementById('globe').dataset.routes),
       occupied: Number(document.getElementById('stats').textContent.match(/(\d+) localities occupied now/)?.[1]),
       reached: Number(document.getElementById('stats').textContent.match(/(\d+) reached by this point/)?.[1]),
     }));
@@ -518,14 +530,23 @@ test('a locality stays on the map after its own window closes', async () => {
     `only ${mid.drawn} dots are drawn for ${mid.occupied} occupied localities, so nothing is being trailed`,
   );
   assert.equal(mid.drawn, mid.reached, 'the map and the count disagree about what has been reached');
+  assert.equal(mid.lines, expectedRoutes(45000), 'the routes drawn are not the ones already walked');
+  assert.ok(
+    mid.lines > liveRoutes(45000),
+    `only ${mid.lines} routes are drawn where ${liveRoutes(45000)} are still being walked, so the rest have been erased`,
+  );
 
   // 39,000 years ago is the last moment the Neanderthals stand. A thousand years
-  // later every one of their dots must be gone, trail and all.
+  // later every one of their marks must be gone, trail and all.
   const before = await counts(40000);
   const after = await counts(38000);
   assert.ok(
     after.drawn < before.drawn,
     `the map still holds ${after.drawn} dots after the Neanderthals are gone, against ${before.drawn} while they stood`,
+  );
+  assert.ok(
+    after.lines < before.lines,
+    `the map still holds ${after.lines} routes after the Neanderthals are gone`,
   );
 });
 
@@ -562,21 +583,60 @@ test('start over goes back to the oldest moment and runs from it', async () => {
   assert.equal(await page.getAttribute('#play', 'aria-pressed'), 'false');
 });
 
-test('the map names species, not nicknames', async () => {
+test('the map names a species and brackets its nickname', async () => {
   await page.goto(BASE, { waitUntil: 'load' });
-  await sleep(800);
+  await sleep(900);
   const legend = await page.locator('#legend').innerText();
-  for (const name of ['Homo floresiensis', 'Homo neanderthalensis', 'Australopithecus afarensis']) {
-    assert.ok(legend.includes(name), `the legend does not name ${name}`);
+  for (const line of [
+    'Homo floresiensis (The Hobbit)',
+    'Homo neanderthalensis (Neanderthals)',
+    'Paranthropus boisei (Nutcracker Man)',
+  ]) {
+    assert.ok(legend.includes(line), `the legend does not read "${line}"`);
   }
-  for (const nickname of ['Hobbit', 'Nutcracker Man', "Lucy's kind", 'Dragon Man', 'Handy man']) {
-    assert.ok(!legend.includes(nickname), `the legend still prints the nickname ${nickname}`);
-  }
-  // And the names are set as names, which is what an italic binomial means.
+  // The name comes first and is set as a name; the nickname follows in brackets.
+  const first = await page.locator('.chip[data-species="floresiensis"] .chip-name').innerText();
+  assert.ok(first.indexOf('Homo floresiensis') < first.indexOf('(The Hobbit)'), 'the nickname leads');
   assert.ok(
     (await page.locator('#legend .chip .sp').count()) >= 20,
     'the species names are not set as species names',
   );
+});
+
+test('the chart gives every species an avatar and keeps the bar off the text', async () => {
+  await page.goto(BASE, { waitUntil: 'load' });
+  await sleep(900);
+
+  const rows = await page.locator('#bars .bar').count();
+  const avatars = await page.locator('#bars .bar .bar-avatar').count();
+  assert.equal(avatars, rows, 'a species row has no avatar');
+  assert.ok(avatars >= 20, `only ${avatars} avatars`);
+
+  // Every avatar must actually have loaded — an <img> with a broken source
+  // renders as nothing at all and still counts in the DOM.
+  const broken = await page.evaluate(() =>
+    [...document.querySelectorAll('#bars .bar-avatar')]
+      .filter((img) => !img.complete || img.naturalWidth === 0)
+      .map((img) => img.getAttribute('src')),
+  );
+  assert.deepEqual(broken, [], `avatars that did not load: ${broken.join(', ')}`);
+
+  // And the bar must not be drawn over the name, which is the fault this
+  // replaced: the fill was positioned across the whole row and ran under the
+  // label wherever a species had an early start.
+  const overlap = await page.evaluate(() => {
+    let worst = null;
+    for (const row of document.querySelectorAll('#bars .bar')) {
+      const name = row.querySelector('.bar-name').getBoundingClientRect();
+      const fill = row.querySelector('.bar-fill').getBoundingClientRect();
+      if (fill.left < name.right - 1) {
+        worst = `${row.querySelector('.bar-name').textContent.trim()}: bar starts at ${Math.round(fill.left)}, name ends at ${Math.round(name.right)}`;
+        break;
+      }
+    }
+    return worst;
+  });
+  assert.equal(overlap, null, `the bar runs under the species name — ${overlap}`);
 });
 
 test('a locality opens with its population basis spelled out', async () => {
@@ -604,6 +664,100 @@ test('the footer reopens the answer, which is what makes it a setting', async ()
   await page.click('#consentClose');
   await sleep(150);
   assert.equal(await page.locator('#consentBar').isVisible(), false, 'the panel did not close');
+});
+
+test('hovering a dot says which hominin it is', async () => {
+  // The hover card is what answers "which of these twenty-three is that dot"
+  // without asking the reader to hold a colour in their head: the avatar, the
+  // name, and the nickname people actually call it by.
+  await page.goto(`${BASE}?at=45000`, { waitUntil: 'load' });
+  await sleep(1300);
+
+  const box = await page.locator('#globe').boundingBox();
+  const spots = [
+    [2.5, 36],
+    [21.9, 31.3],
+    [36, -5.3],
+    [51, 2],
+    [28, 74],
+    [-30, 130],
+    [38, 23],
+    [60, 30],
+  ];
+  let hit = false;
+  for (const [lat, lon] of spots) {
+    await page.mouse.move(
+      box.x + ((lon + 180) / 360) * box.width,
+      box.y + ((90 - lat) / 180) * box.height,
+    );
+    await sleep(120);
+    if (await page.locator('#hoverReadout').isVisible()) {
+      hit = true;
+      break;
+    }
+  }
+  assert.ok(hit, 'hovering a locality showed nothing at all');
+
+  const card = page.locator('#hoverReadout');
+  assert.equal(await card.locator('img.hover-avatar').count(), 1, 'the card has no avatar');
+  const state = await card.evaluate((el) => ({
+    src: el.querySelector('.hover-avatar').getAttribute('src'),
+    loaded: el.querySelector('.hover-avatar').naturalWidth > 0,
+    text: el.innerText,
+  }));
+  assert.match(state.src, /^\.\/avatars\/[a-z_]+\.png$/, `the avatar is not a species avatar: ${state.src}`);
+  assert.equal(state.loaded, true, 'the avatar did not load');
+  assert.match(state.text, /[A-Z][a-z]+ [a-z]+/, 'the card does not name the species');
+
+  // And it is anchored to the map, not to the frame — the legend moved below the
+  // map and a card anchored to the frame was drawn underneath it.
+  const inside = await page.evaluate(() => {
+    const g = document.getElementById('globe').getBoundingClientRect();
+    const r = document.getElementById('hoverReadout').getBoundingClientRect();
+    return r.top >= g.top && r.bottom <= g.bottom && r.left >= g.left && r.right <= g.right;
+  });
+  assert.equal(inside, true, 'the hover card is outside the map it describes');
+});
+
+test('the globe answers a hover too', async () => {
+  // The globe's dots are two to seven pixels across on a sphere that is turning,
+  // so a real pointer has to land on one. The sweep is done with synthetic
+  // events inside a single call: no frames run between them, so the globe cannot
+  // rotate out from under the search.
+  await page.goto(`${BASE}?at=45000`, { waitUntil: 'load' });
+  await sleep(1200);
+  await page.click('.viewbtn[data-view="globe"]');
+  await sleep(1600);
+
+  const found = await page.evaluate(() => {
+    const canvas = document.querySelector('#globe canvas.globecanvas');
+    const box = canvas.getBoundingClientRect();
+    for (let y = box.top + 40; y < box.bottom - 40; y += 3) {
+      for (let x = box.left + 40; x < box.right - 40; x += 3) {
+        canvas.dispatchEvent(
+          new PointerEvent('pointermove', { clientX: x, clientY: y, bubbles: true }),
+        );
+        if (document.getElementById('globe').dataset.hover === '1') {
+          return { x: Math.round(x - box.left), y: Math.round(y - box.top) };
+        }
+      }
+    }
+    return null;
+  });
+  assert.ok(found, 'no point on the whole globe reported a dot under the pointer');
+  assert.equal(
+    await page.evaluate(() => document.getElementById('globe').dataset.hover),
+    '1',
+    'the sweep found a dot and the page then forgot it',
+  );
+
+  const card = await page.locator('#hoverReadout').innerText();
+  assert.match(card, /[A-Z][a-z]+ [a-z]+/, `the globe hover named nothing: ${card}`);
+  assert.equal(
+    await page.locator('#hoverReadout img.hover-avatar').count(),
+    1,
+    'the globe hover card has no avatar',
+  );
 });
 
 test('a moment can be linked to directly', async () => {

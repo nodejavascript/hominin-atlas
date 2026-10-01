@@ -1521,6 +1521,19 @@ p {
   margin: 0 0 8px;
 }
 
+/* 🔴 ONLY THE STAR IS YELLOW — house part 4b. The site's anchors take
+   `--accent-soft`, which is an amber, so the repository link's own LABEL was
+   being measured as a yellow label beside a yellow star. The label takes the
+   footer's own colour instead; the star keeps `--yellow`, and it is the only
+   yellow in the line. Measured from the rendered page, not read off this file. */
+.footer-links .repo {
+  color: var(--text);
+}
+
+.footer-links .repo:hover {
+  color: #ffffff;
+}
+
 .footer-copy {
   margin: 0;
   font-size: 12.5px;

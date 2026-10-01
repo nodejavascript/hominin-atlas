@@ -13,12 +13,14 @@ The live site: **https://hominin-atlas.nodejavascript.com/**
 `~/.public_repo_sweep.py --repo . --public --history` **failed first, with five
 findings**, and every one of them was real:
 
-1. `an address removed before publication` in the working tree — the Wikimedia user-agent in
+1. **a personal address** in the working tree — the Wikimedia user-agent in
    `tools/fetch-faces.py` carried a contact address, because Commons asks for one.
+   *(The address is deliberately not printed here. This file is in a public
+   repository, and naming it in the record of the leak would repeat the leak.)
 2. and 3. the same address in **the commit that introduced it** — *"a line deleted
    today is still in the commit that introduced it"*.
 4. the address in **documentation prose**.
-5. 🔴 **every commit was authored as `an address removed before publication`.** This is the one nobody
+5. 🔴 **every commit was authored with a personal address.** This is the one nobody
    sees: a repository publishes its commit authors, no file scan reveals them, and it
    is on **every** commit rather than on the one that added the line.
 

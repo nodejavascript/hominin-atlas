@@ -9,6 +9,7 @@
     "test": "npm run build && node --test test/data.test.js test/static.test.js",
     "test:e2e": "npm run build && node --test test/e2e.test.js",
     "test:all": "npm run build && node --test test/*.test.js",
+    "test:live": "node tools/live-check.mjs",
     "icons": "python3 tools/make-icons.py",
   "avatars": "python3 tools/make-avatars.py",    "shelf": "python3 tools/make-shelf.py",    "serve": "node tools/serve.js",
     "deploy": "bash tools/deploy.sh"

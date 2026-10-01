@@ -32,14 +32,25 @@ why a URL is the contact and not an address; then the history was rewritten with
 form `vision-ml-demo` already uses. **`SWEEP OK` afterwards, and the sweep is what
 proves it, not the intention.**
 
-> 🔴 **AND IT CAME BACK — which is the lesson worth keeping.** The rewrite fixes HISTORY; the git
-> config writes the NEXT commit. **The deploy-day commit and the one after it were authored with a
-> personal address** — this machine's user identity — so the address was back in the published
-> history **two commits after it had been purged from every earlier one**, and the same two
-> addresses were sitting in `DEPLOY-DAY.md` as well, in the paragraph describing the leak.
-> *(Those commits are deliberately not cited by hash: the rewrite this describes replaced every
-> hash in the repository, so any hash written down here would be dead on arrival.)*
-> **The sweep caught it a second time, which is the sweep earning its keep.**
+> 🔴 **AND IT CAME BACK TWICE — which is the lesson worth keeping.** The rewrite fixes HISTORY. The
+> git config writes the NEXT commit, and **the prose writes it too.** Two separate recurrences, both
+> caught by the sweep, neither by reading:
+>
+> 1. **The git config.** The deploy-day commit and the one after it were authored with a personal
+>    address — this machine's user identity — so the address was back in the published history
+>    **two commits after it had been purged from every earlier one.**
+> 2. **The record itself — and this is the one worth carrying to the next site.** This paragraph
+>    originally said *"the same two addresses were sitting in `DEPLOY-DAY.md` as well, in the
+>    paragraph describing the leak"*. That was true of the **first** draft, and the fix for it
+>    quoted the address **again**, a few lines below, while describing the author problem. So the
+>    file that had just been purged of the address carried the address once more, one commit later,
+>    and **the sweep failed a second time on the same file.**
+>
+> Both were fixed the same way — history rewritten and force-pushed, then **`SWEEP OK`** — and both
+> would have been avoided by one rule: **DESCRIBE THE IDENTIFIER, NEVER QUOTE IT.** A record of a
+> leak is still a record that is published. *(Nothing here is cited by hash: the rewrites replaced
+> every hash in the repository, so a hash written down here would be dead on arrival.)*
+> **The sweep caught both, which is the sweep earning its keep.**
 >
 > The fix is `git config user.email` **set in the REPOSITORY**: a public repo's commits are then
 > clean by construction rather than by remembering. **Set it before the next commit, not after the

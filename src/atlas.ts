@@ -208,19 +208,39 @@ export function speciesAliveAt(years: number): Species[] {
 }
 
 /**
- * How far into its own window a presence is, 0..1. Used to fade a dot in and
- * out so the map does not flicker when a locality appears or disappears.
+ * What a locality is doing in the record at one moment.
+ *
+ * `coming` — it has not been reached yet, or its species is already gone.
+ * `live`   — it is occupied at this moment.
+ * `trail`  — it was occupied and is not any more, but its species still stands.
+ *
+ * The trail is the whole reason this exists. A dot that vanished the moment its
+ * own window closed left the map holding a handful of marks with no history on
+ * them: the dispersal out of Africa looked like a scatter rather than a movement.
+ * Held open until the species itself goes, the dots accumulate, and the density
+ * and the direction of a migration are legible in a single picture.
  */
-export function lifeFraction(p: Presence, years: number): number {
-  const span = p.from - p.to;
-  if (span <= 0) return years === p.from ? 1 : 0;
-  const at = (p.from - years) / span;
-  if (at < 0 || at > 1) return 0;
-  const edge = Math.min(0.12, 1 / 3);
-  if (at < edge) return at / edge;
-  if (at > 1 - edge) return (1 - at) / edge;
-  return 1;
+export type PresenceStage = 'coming' | 'live' | 'trail';
+
+export function presenceStage(
+  p: Presence,
+  species: Species | undefined,
+  years: number,
+): PresenceStage {
+  if (!species) return 'coming';
+  // The species is extinct at this moment, so nothing of it is on the map.
+  if (years < species.to) return 'coming';
+  // Not reached yet.
+  if (years > p.from) return 'coming';
+  if (years >= p.to) return 'live';
+  return 'trail';
 }
+
+/** How strongly a trail dot is drawn, against a live one. */
+export const TRAIL_ALPHA = 0.42;
+
+/** How long a dot takes to grow into place when it first appears, in ms. */
+export const ARRIVE_MS = 700;
 
 // ── display helpers ───────────────────────────────────────────────────────────
 

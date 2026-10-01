@@ -20,9 +20,11 @@ import {
   formatYears,
   GLACIAL_RECORD_STARTS,
   isLowSea,
+  MAX_YA,
   POP_BASIS_LABEL,
   POP_BASIS_NOTE,
   posAt,
+  presenceStage,
   speciesAlive,
   timeAt,
   YOUNGEST_LOCALITY,
@@ -98,6 +100,7 @@ const barList = must<HTMLDivElement>('bars');
 const legend = must<HTMLDivElement>('legend');
 const stationsHost = el<HTMLDivElement>('stations');
 const playBtn = el<HTMLButtonElement>('play');
+const restartBtn = el<HTMLButtonElement>('restart');
 const contactsHost = el<HTMLDivElement>('contacts');
 const marker = el<HTMLDivElement>('barMarker');
 const mapSection = el<HTMLElement>('map');
@@ -151,7 +154,7 @@ function handleHover(presence: Presence | null): void {
   }
   const species = atlas.speciesById.get(presence.s);
   hoverOut.hidden = false;
-  hoverOut.textContent = `${presence.site} · ${species?.common === '—' ? species.name : species?.common ?? ''} · ${formatYears(presence.from)}`;
+  hoverOut.textContent = `${presence.site} · ${species?.name ?? ''} · ${formatYears(presence.from)}`;
 }
 
 function buildView(kind: ViewKind): MapViewApi {
@@ -190,7 +193,7 @@ function setView(kind: ViewKind): void {
   globeHost.dataset.view = kind;
   map = buildView(kind);
   map.setYears(years);
-  map.setFilter(filter ? new Set([filter]) : null);
+  map.setFilter(visibleIds());
   map.resize();
   if (hoverOut) hoverOut.hidden = true;
   syncViewButtons();
@@ -202,7 +205,15 @@ for (const button of document.querySelectorAll<HTMLButtonElement>('.viewbtn')) {
 }
 
 let years = timeAt(Number(slider.value) / RESOLUTION);
-let filter: string | null = null;
+/**
+ * The species switched off the map.
+ *
+ * Stored as the exception rather than the selection, because the page opens with
+ * every species drawn and that is the state a reader returns to most often: an
+ * empty set means "everything is on the map", and there is nothing to keep in
+ * step when a species is added to the data.
+ */
+const hidden = new Set<string>();
 let playing = false;
 let raf = 0;
 let lastFrame = 0;
@@ -233,15 +244,12 @@ const bars: BarRow[] = atlas.species.map((s) => {
 
   const label = document.createElement('span');
   label.className = 'bar-label';
-  label.textContent = s.common === '—' ? s.name : s.common;
+  label.innerHTML = `<i class="sp">${esc(s.name)}</i>`;
   node.appendChild(label);
 
   node.addEventListener('click', () => {
-    filter = filter === s.id ? null : s.id;
-    map.setFilter(filter ? new Set([filter]) : null);
-    syncBars();
-    track('species_filter', { species: s.id, active: filter === s.id });
     showSpecies(s);
+    track('species_open', { species: s.id });
   });
 
   barList.appendChild(node);
@@ -251,36 +259,73 @@ const bars: BarRow[] = atlas.species.map((s) => {
 function syncBars(): void {
   for (const row of bars) {
     const alive = speciesAlive(row.species, years);
+    const off = hidden.has(row.species.id);
     row.node.classList.toggle('is-now', alive);
-    row.node.classList.toggle('is-picked', filter === row.species.id);
-    row.node.classList.toggle('is-muted', filter !== null && filter !== row.species.id);
-    row.node.setAttribute('aria-pressed', String(filter === row.species.id));
+    row.node.classList.toggle('is-off', off);
+    row.node.setAttribute(
+      'title',
+      `${row.species.name} — ${formatSpan(row.species.from, row.species.to)}${off ? ' — hidden on the map' : ''}`,
+    );
   }
 }
 
 // ── the legend ────────────────────────────────────────────────────────────────
+
+/** The species still drawn, or null when that is all of them. */
+function visibleIds(): Set<string> | null {
+  if (hidden.size === 0) return null;
+  const ids = new Set<string>();
+  for (const s of atlas.species) if (!hidden.has(s.id)) ids.add(s.id);
+  return ids;
+}
+
+function applyVisibility(): void {
+  map.setFilter(visibleIds());
+  syncBars();
+  syncLegend();
+}
+
+function toggleSpecies(s: Species): void {
+  if (hidden.has(s.id)) hidden.delete(s.id);
+  else hidden.add(s.id);
+  applyVisibility();
+  track('species_visibility', { species: s.id, hidden: hidden.has(s.id) });
+}
+
+/** Sits first in the legend and appears only once something is switched off. */
+const showAll = document.createElement('button');
+showAll.type = 'button';
+showAll.className = 'chip chip-all';
+showAll.textContent = 'Show every species';
+showAll.hidden = true;
+showAll.addEventListener('click', () => {
+  hidden.clear();
+  applyVisibility();
+  track('species_visibility', { species: 'all', hidden: false });
+});
+legend.appendChild(showAll);
 
 for (const s of atlas.species) {
   const chip = document.createElement('button');
   chip.type = 'button';
   chip.className = 'chip';
   chip.dataset.species = s.id;
-  chip.innerHTML = `<i style="background:${esc(s.colour)}"></i><span>${esc(s.common === '—' ? s.name : s.common)}</span>`;
-  chip.addEventListener('click', () => {
-    filter = filter === s.id ? null : s.id;
-    map.setFilter(filter ? new Set([filter]) : null);
-    syncBars();
-    syncLegend();
-    showSpecies(s);
-  });
+  chip.title = `Show or hide ${s.name} on the map`;
+  chip.innerHTML = `<i style="background:${esc(s.colour)}"></i><span class="sp">${esc(s.name)}</span>`;
+  chip.addEventListener('click', () => toggleSpecies(s));
   legend.appendChild(chip);
 }
 
 function syncLegend(): void {
-  for (const chip of legend.querySelectorAll<HTMLButtonElement>('.chip')) {
-    chip.classList.toggle('is-picked', chip.dataset.species === filter);
+  for (const chip of legend.querySelectorAll<HTMLButtonElement>('.chip[data-species]')) {
+    const off = hidden.has(chip.dataset.species ?? '');
+    chip.classList.toggle('is-off', off);
+    chip.setAttribute('aria-pressed', String(!off));
   }
+  showAll.hidden = hidden.size === 0;
 }
+
+syncLegend();
 
 // ── the stations ──────────────────────────────────────────────────────────────
 
@@ -304,8 +349,7 @@ function contactRow(c: Contact): HTMLButtonElement {
   const a = atlas.speciesById.get(c.a);
   const b = atlas.speciesById.get(c.b);
   const same = c.a === c.b;
-  const nameOf = (s: Species | undefined, fallback: string) =>
-    !s ? fallback : s.common === '—' ? s.name : s.common;
+  const nameOf = (s: Species | undefined, fallback: string) => (!s ? fallback : s.name);
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'contact';
@@ -344,12 +388,19 @@ function syncReadout(): void {
 
   const alive = atlas.species.filter((s) => speciesAlive(s, years));
   const places = atlas.presences.filter((p) => years <= p.from && years >= p.to);
+  // The map holds every locality reached by this moment, not only the ones
+  // occupied at it — so the counts have to say both, or the page contradicts
+  // what the reader can see.
+  const reached = atlas.presences.filter(
+    (p) => presenceStage(p, atlas.speciesById.get(p.s), years) !== 'coming',
+  );
   const events = atlas.contacts.filter((c) => years <= c.from && years >= c.to);
 
   if (statsOut) {
     statsOut.innerHTML =
       `<span><b>${alive.length}</b> hominin ${alive.length === 1 ? 'species' : 'species'} known to be alive</span>` +
-      `<span><b>${places.length}</b> ${places.length === 1 ? 'locality' : 'localities'} occupied</span>` +
+      `<span><b>${places.length}</b> ${places.length === 1 ? 'locality' : 'localities'} occupied now</span>` +
+      `<span><b>${reached.length}</b> reached by this point</span>` +
       `<span><b>${events.length}</b> recorded ${events.length === 1 ? 'contact' : 'contacts'} in progress</span>`;
   }
 
@@ -392,7 +443,7 @@ function syncReadout(): void {
 
 let lastBucket = -1;
 function applyYears(next: number): void {
-  years = Math.min(6_000_000, Math.max(0, next));
+  years = Math.min(MAX_YA, Math.max(0, next));
   const pos = Math.round(posAt(years) * RESOLUTION);
   if (slider.value !== String(pos)) slider.value = String(pos);
   map.setYears(years);
@@ -435,7 +486,7 @@ function tick(now: number): void {
 }
 
 function play(): void {
-  if (years <= 1) applyYears(6_000_000);
+  if (years <= 1) applyYears(MAX_YA);
   playing = true;
   lastFrame = 0;
   if (playBtn) {
@@ -465,6 +516,16 @@ playBtn?.addEventListener('click', () => {
   else play();
 });
 
+// Start over: back to the oldest moment on the slider and run forward from it.
+// The map is empty there, so what a reader sees is the record filling in — which
+// is the one thing a still picture of this dataset cannot show.
+restartBtn?.addEventListener('click', () => {
+  stop();
+  applyYears(MAX_YA);
+  play();
+  track('timeline_restart', {});
+});
+
 slider.addEventListener('input', () => {
   stop();
   applyYears(timeAt(Number(slider.value) / RESOLUTION));
@@ -479,7 +540,7 @@ function showSpecies(s: Species): void {
     `<div class="panel-head" style="--accent:${esc(s.colour)}">` +
     `<button class="panel-close" type="button" aria-label="Close">×</button>` +
     `<h3>${esc(s.name)}</h3>` +
-    `<p class="panel-sub">${esc(s.common === '—' ? 'no common name' : s.common)} · ${esc(formatSpan(s.from, s.to))}</p>` +
+    `<p class="panel-sub">${esc(formatSpan(s.from, s.to))}</p>` +
     `</div>` +
     `<p>${esc(s.blurb)}</p>` +
     `<dl>` +

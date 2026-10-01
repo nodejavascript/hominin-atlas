@@ -422,7 +422,7 @@ test('play runs the record forward and can be stopped', async () => {
 
 test('the species chart and the legend agree with the data', async () => {
   const bars = await page.locator('#bars .bar').count();
-  const chips = await page.locator('#legend .chip').count();
+  const chips = await page.locator('#legend .chip[data-species]').count();
   assert.equal(bars, chips, 'the chart and the legend disagree about how many species there are');
   assert.ok(bars >= 20, `only ${bars} species rows`);
 
@@ -437,8 +437,12 @@ test('the species chart and the legend agree with the data', async () => {
   assert.equal(nowCount, 1, `${nowCount} species are marked alive today, and there should be one`);
 });
 
-test('picking a species filters the globe and opens its sources', async () => {
-  await page.click('.chip[data-species="neanderthalensis"]');
+test('the species chart opens a species and the legend controls the map', async () => {
+  await page.goto(BASE, { waitUntil: 'load' });
+  await sleep(900);
+
+  // The chart row is the way to READ about a species...
+  await page.click('#bars .bar[title^="Homo neanderthalensis"]');
   await sleep(250);
   const panel = page.locator('#panel');
   assert.equal(await panel.isVisible(), true, 'the panel did not open');
@@ -446,9 +450,6 @@ test('picking a species filters the globe and opens its sources', async () => {
   assert.match(text, /Homo neanderthalensis/);
   assert.match(text, /Gone as a population/);
   assert.ok((await panel.locator('.refs a').count()) >= 2, 'the species panel cites nothing');
-
-  const picked = await page.locator('#legend .chip.is-picked').count();
-  assert.equal(picked, 1, 'the filter is not shown in the legend');
 
   // The panel must not be sitting on a control. This is the fault it replaced:
   // as an overlay it lay across the species legend in the corner, so the legend
@@ -465,8 +466,117 @@ test('picking a species filters the globe and opens its sources', async () => {
     );
   });
   assert.equal(overlap, false, 'the detail panel covers the species legend');
+  await page.click('.panel-close');
+  await sleep(200);
+});
 
-  await page.click('.chip[data-species="neanderthalensis"]');
+test('a species can be switched off the map, and back on', async () => {
+  await page.goto(`${BASE}?at=45000`, { waitUntil: 'load' });
+  await sleep(900);
+
+  const dots = () =>
+    page.evaluate(() => Number(document.getElementById('globe').dataset.dots));
+  const chip = page.locator('.chip[data-species="neanderthalensis"]');
+  const showAll = page.locator('.chip-all');
+
+  assert.equal(await page.locator('.chip.is-off').count(), 0, 'the page did not open with all of them on');
+  assert.equal(await showAll.isVisible(), false, 'a way back is offered before anything is switched off');
+  const all = await dots();
+
+  await chip.click();
+  await sleep(500);
+  assert.equal(await chip.getAttribute('aria-pressed'), 'false');
+  assert.equal(await page.locator('.chip.is-off').count(), 1, 'the chip does not show the species is off');
+  const fewer = await dots();
+  assert.ok(fewer < all, `switching a species off left the map with ${fewer} dots, not fewer than ${all}`);
+  assert.equal(await showAll.isVisible(), true, 'nothing offers a way back');
+
+  await showAll.click();
+  await sleep(500);
+  assert.equal(await page.locator('.chip.is-off').count(), 0);
+  assert.equal(await dots(), all, 'showing every species did not restore the map');
+});
+
+test('a locality stays on the map after its own window closes', async () => {
+  // This is the trail. A dot used to vanish the moment its own window shut, so
+  // the map held a scatter rather than a movement; it now stays until its
+  // species is gone, which is what makes density and direction legible.
+  const counts = async (at) => {
+    await page.goto(`${BASE}?at=${at}`, { waitUntil: 'load' });
+    await sleep(1100);
+    return page.evaluate(() => ({
+      drawn: Number(document.getElementById('globe').dataset.dots),
+      occupied: Number(document.getElementById('stats').textContent.match(/(\d+) localities occupied now/)?.[1]),
+      reached: Number(document.getElementById('stats').textContent.match(/(\d+) reached by this point/)?.[1]),
+    }));
+  };
+
+  const mid = await counts(45000);
+  assert.ok(mid.occupied > 0, 'nothing is occupied at 45,000 years ago, so the check proves nothing');
+  assert.ok(
+    mid.drawn > mid.occupied,
+    `only ${mid.drawn} dots are drawn for ${mid.occupied} occupied localities, so nothing is being trailed`,
+  );
+  assert.equal(mid.drawn, mid.reached, 'the map and the count disagree about what has been reached');
+
+  // 39,000 years ago is the last moment the Neanderthals stand. A thousand years
+  // later every one of their dots must be gone, trail and all.
+  const before = await counts(40000);
+  const after = await counts(38000);
+  assert.ok(
+    after.drawn < before.drawn,
+    `the map still holds ${after.drawn} dots after the Neanderthals are gone, against ${before.drawn} while they stood`,
+  );
+});
+
+test('a dot grows into place when it appears', async () => {
+  // The count is published by the page, because a screenshot can show that
+  // something was painted and cannot say whether it was still arriving.
+  await page.goto(`${BASE}?at=45000`, { waitUntil: 'domcontentloaded' });
+  const early = await page.evaluate(() => ({
+    drawn: Number(document.getElementById('globe').dataset.dots),
+    arriving: Number(document.getElementById('globe').dataset.arriving),
+  }));
+  await sleep(1400);
+  const settled = await page.evaluate(() => Number(document.getElementById('globe').dataset.arriving));
+
+  assert.ok(early.drawn > 0, 'nothing is on the map, so there is nothing to arrive');
+  assert.ok(early.arriving > 0, 'the dots were drawn with nothing arriving');
+  assert.equal(settled, 0, 'the dots never finished arriving');
+});
+
+test('start over goes back to the oldest moment and runs from it', async () => {
+  await page.goto(BASE, { waitUntil: 'load' });
+  await sleep(900);
+  assert.equal(await page.locator('#restart').count(), 1, 'there is no way back to the start');
+
+  await page.click('#restart');
+  await sleep(120);
+  assert.equal(await page.getAttribute('#play', 'aria-pressed'), 'true', 'start over did not begin playing');
+  const oldest = await page.textContent('#yearReadout');
+  assert.match(oldest, /million years ago/, `start over landed on ${oldest}, not the far end of the record`);
+
+  await sleep(1200);
+  assert.notEqual(await page.textContent('#yearReadout'), oldest, 'the record did not advance');
+  await page.click('#play');
+  assert.equal(await page.getAttribute('#play', 'aria-pressed'), 'false');
+});
+
+test('the map names species, not nicknames', async () => {
+  await page.goto(BASE, { waitUntil: 'load' });
+  await sleep(800);
+  const legend = await page.locator('#legend').innerText();
+  for (const name of ['Homo floresiensis', 'Homo neanderthalensis', 'Australopithecus afarensis']) {
+    assert.ok(legend.includes(name), `the legend does not name ${name}`);
+  }
+  for (const nickname of ['Hobbit', 'Nutcracker Man', "Lucy's kind", 'Dragon Man', 'Handy man']) {
+    assert.ok(!legend.includes(nickname), `the legend still prints the nickname ${nickname}`);
+  }
+  // And the names are set as names, which is what an italic binomial means.
+  assert.ok(
+    (await page.locator('#legend .chip .sp').count()) >= 20,
+    'the species names are not set as species names',
+  );
 });
 
 test('a locality opens with its population basis spelled out', async () => {

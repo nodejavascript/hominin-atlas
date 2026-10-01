@@ -240,6 +240,28 @@ test('the counts printed in the page match the data behind them', () => {
   );
 });
 
+test('the timeline can be played and started over', () => {
+  assert.match(html, /id="play"[^>]*type="button"/, 'there is no play control');
+  assert.match(
+    html,
+    /id="restart"[^>]*type="button">Start over</,
+    'there is no way back to the beginning, which is what starts the record again',
+  );
+  assert.ok(
+    html.indexOf('id="restart"') > html.indexOf('id="play"'),
+    'start over should sit beside play, not replace it',
+  );
+});
+
+test('the page names species, and never the nickname beside them', () => {
+  // The data still carries a colloquial label for some species — "The Hobbit",
+  // "Nutcracker Man" — and the page stopped printing them. This guards the
+  // rendering, because the label lives on in the JSON and is one typo away from
+  // coming back onto the screen.
+  const app = readFileSync(join(root, 'src', 'app.ts'), 'utf8');
+  assert.ok(!/\.common\b/.test(app), 'the page prints the colloquial label again');
+});
+
 test('the bundle was built and is not a stub', () => {
   const app = read('app.js');
   assert.ok(app.length > 200_000, `app.js is ${app.length} bytes, which is too small to contain three.js`);

@@ -15,9 +15,11 @@
 
 import {
   atlas,
+  ARRIVE_MS,
   isLowSea,
-  lifeFraction,
+  presenceStage,
   speciesAlive,
+  TRAIL_ALPHA,
 } from './atlas';
 import { BASE_H, BASE_W, buildBase, loadLandPolygons, splitAtSeam, uv } from './mapdraw';
 import { contactColour, isGhost, popWeight } from './palette';
@@ -91,6 +93,9 @@ export function createFlatMap(
   let moved = 0;
   let last = { x: 0, y: 0 };
 
+  /** When each dot first appeared, so it can grow into place. Keyed by locality. */
+  const arrived = new Map<string, number>();
+
   // ── the view ──────────────────────────────────────────────────────────────
 
   function rect(): Rect {
@@ -158,10 +163,10 @@ export function createFlatMap(
       const through = (route.from - years) / span;
       const ramp = Math.min(1, Math.min(through, 1 - through) / 0.15);
       if (ramp <= 0) continue;
-      const dim = filter && !filter.has(route.s) ? 0.12 : 1;
+      if (filter && !filter.has(route.s)) continue;
 
       ctx.strokeStyle = species.colour;
-      ctx.globalAlpha = ramp * 0.72 * dim;
+      ctx.globalAlpha = ramp * 0.72;
       ctx.lineWidth = Math.max(1, 1.5 * k);
       for (const run of splitAtSeam(route.pts)) {
         ctx.beginPath();
@@ -196,31 +201,62 @@ export function createFlatMap(
     ctx.globalAlpha = 1;
 
     // ── the dots ────────────────────────────────────────────────────────────
+    //
+    // A dot stays on the map from the moment its locality is first reached until
+    // its species is gone. While it is occupied it is drawn at full strength;
+    // once its own window has closed it stays as a trail, dimmer but present, so
+    // the movement it belongs to can be read off the map instead of guessed at.
     hit = [];
+    const live = new Set<string>();
+    let arriving = 0;
     for (const presence of atlas.presences) {
       const species = atlas.speciesById.get(presence.s);
-      if (!species || !speciesAlive(species, years)) continue;
-      const f = lifeFraction(presence, years);
-      if (f <= 0.01) continue;
+      const stage = presenceStage(presence, species, years);
+      if (stage === 'coming') continue;
+      if (filter && !filter.has(presence.s)) continue;
 
       const [x, y] = at(presence.lat, presence.lon);
       // Off-canvas dots are skipped, so the hit list stays small.
       if (x < -20 || y < -20 || x > width + 20 || y > height + 20) continue;
 
-      const dim = filter && !filter.has(presence.s) ? 0.14 : 1;
-      const r = (1.9 + 4.6 * popWeight(presence.pop)) * k * (0.6 + 0.4 * f);
+      const target = stage === 'live' ? 1 : TRAIL_ALPHA;
+      const r = (1.9 + 4.6 * popWeight(presence.pop)) * k;
       const ghost = isGhost(presence.pop);
       const selected = hovered === presence;
 
-      ctx.globalAlpha = f * dim * (selected ? 1 : 0.95);
+      // A dot grows into place the first time it appears, rather than blinking
+      // on. The birth is keyed to the dot, so scrubbing back and forth replays
+      // it — which is what shows a species arriving.
+      live.add(presence.id);
+      let born = arrived.get(presence.id);
+      if (born === undefined) {
+        born = now;
+        arrived.set(presence.id, born);
+      }
+      const grow = reduceMotion ? 1 : Math.min(1, (now - born) / ARRIVE_MS);
+      const ease = 1 - Math.pow(1 - grow, 3);
+      if (grow < 1) arriving += 1;
+
+      // The ring starts wide and closes onto the dot, which is what makes an
+      // arrival read as an arrival and not as a redraw.
+      if (grow < 1 && !ghost) {
+        ctx.globalAlpha = (1 - grow) * 0.85;
+        ctx.strokeStyle = species?.colour ?? '#fff';
+        ctx.lineWidth = Math.max(1.1, 2.1 * k * (1 - grow) + 0.8);
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(2.6, r) * (4.2 - 3.2 * ease), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.globalAlpha = target * (selected ? 1 : 0.95) * (0.35 + 0.65 * ease);
       if (ghost) {
-        ctx.strokeStyle = species.colour;
+        ctx.strokeStyle = species?.colour ?? '#fff';
         ctx.lineWidth = Math.max(1.2, 1.4 * k);
         ctx.beginPath();
         ctx.arc(x, y, Math.max(2.6, r), 0, Math.PI * 2);
         ctx.stroke();
       } else {
-        ctx.fillStyle = species.colour;
+        ctx.fillStyle = species?.colour ?? '#fff';
         ctx.beginPath();
         ctx.arc(x, y, Math.max(1.6, r), 0, Math.PI * 2);
         ctx.fill();
@@ -235,7 +271,17 @@ export function createFlatMap(
       }
       hit.push({ presence, x, y, r: Math.max(5, r + 5 * k) });
     }
+    // Forget the dots that have left the map, so the next time each one appears
+    // it arrives again.
+    for (const id of arrived.keys()) if (!live.has(id)) arrived.delete(id);
     ctx.globalAlpha = 1;
+
+    // What is actually on the canvas, published for the page's own tests. A
+    // screenshot can show that something was painted; it cannot say how many
+    // dots are on the map or how many of them are still growing, and those two
+    // numbers are the whole of what the trail and the arrival animation claim.
+    container.dataset.dots = String(hit.length);
+    container.dataset.arriving = String(arriving);
   }
 
   // ── picking ───────────────────────────────────────────────────────────────

@@ -23,7 +23,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-import { atlas, isLowSea, lifeFraction, speciesAlive } from './atlas';
+import { atlas, ARRIVE_MS, isLowSea, presenceStage, speciesAlive, TRAIL_ALPHA } from './atlas';
 import { buildBase, loadLandPolygons } from './mapdraw';
 import { CONTACT_COLOUR, popWeight } from './palette';
 import type { Contact, MapViewApi, Presence, Selection, SelectHandler } from './types';
@@ -243,6 +243,9 @@ export function createGlobe(container: HTMLElement, onSelect: SelectHandler): Gl
   let filter: Set<string> | null = null;
   let shelfShowing = false;
 
+  /** When each dot appeared, so it grows into place instead of blinking on. */
+  const arrivedAt = new Float64Array(dots.length).fill(-1);
+
   function applyTime(): void {
     const low = isLowSea(years);
     if (low !== shelfShowing) {
@@ -256,28 +259,32 @@ export function createGlobe(container: HTMLElement, onSelect: SelectHandler): Gl
       const dot = dots[i]!;
       const p = dot.userData.presence as Presence;
       const species = atlas.speciesById.get(p.s);
-      const alive = species ? speciesAlive(species, years) : false;
-      const f = alive ? lifeFraction(p, years) : 0;
-      const dimmed = filter && !filter.has(p.s) ? 0.12 : 1;
-      const scale = dotScale(p);
-      dot.visible = f > 0.01;
-      dot.scale.setScalar(scale * (0.55 + 0.45 * f));
-      const mat = dot.material as THREE.MeshBasicMaterial;
-      mat.opacity = f * dimmed * (p.pop === null ? 0.55 : 0.95);
-      mat.transparent = true;
+      const stage = presenceStage(p, species, years);
+      dot.visible = stage !== 'coming' && (!filter || filter.has(p.s));
+      if (!dot.visible) {
+        // It leaves the map, so the next time it appears it arrives again.
+        arrivedAt[i] = -1;
+        continue;
+      }
+      const live = stage === 'live' ? 1 : TRAIL_ALPHA;
+      dot.userData.base = dotScale(p);
+      dot.userData.target = live * (p.pop === null ? 0.55 : 0.95);
+      (dot.material as THREE.MeshBasicMaterial).transparent = true;
     }
+    // See the note in flatmap.ts: the counts the trail and the arrival animation
+    // are claimed on, published for the page's own tests.
+    container.dataset.dots = String(dots.reduce((n, d) => n + (d.visible ? 1 : 0), 0));
 
     for (let i = 0; i < routes.length; i++) {
       const mesh = routes[i]!;
       const r = mesh.userData.route as (typeof atlas.routes)[number];
       const species = atlas.speciesById.get(r.s);
       const alive = species ? speciesAlive(species, years) : false;
-      const dimmed = filter && !filter.has(r.s) ? 0.1 : 1;
-      mesh.visible = alive && years <= r.from && years >= r.to;
+      mesh.visible = alive && years <= r.from && years >= r.to && (!filter || filter.has(r.s));
       const span = Math.max(1, r.from - r.to);
       const at = (r.from - years) / span;
       const ramp = Math.min(1, Math.min(at, 1 - at) / 0.15);
-      (mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, ramp) * 0.7 * dimmed;
+      (mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, ramp) * 0.7;
     }
 
     for (let i = 0; i < contacts.length; i++) {
@@ -306,6 +313,7 @@ export function createGlobe(container: HTMLElement, onSelect: SelectHandler): Gl
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - t0) / 1000);
     t0 = now;
+    let arriving = 0;
 
     if (targetX !== null && targetY !== null) {
       spinX += (targetX - spinX) * 0.08;
@@ -330,6 +338,21 @@ export function createGlobe(container: HTMLElement, onSelect: SelectHandler): Gl
       ring.scale.setScalar(s);
       (ring.material as THREE.MeshBasicMaterial).opacity = (1 - pulse) * 0.9;
     }
+
+    // A dot that has just appeared grows into place. Keyed to the dot, so
+    // scrubbing the timeline back and forth replays the arrival.
+    for (let i = 0; i < dots.length; i++) {
+      const dot = dots[i]!;
+      if (!dot.visible) continue;
+      if (arrivedAt[i]! < 0) arrivedAt[i] = now;
+      const grow = Math.min(1, (now - arrivedAt[i]!) / ARRIVE_MS);
+      if (grow < 1) arriving += 1;
+      const ease = 1 - Math.pow(1 - grow, 3);
+      dot.scale.setScalar(((dot.userData.base as number) ?? 0.01) * (0.35 + 0.65 * ease));
+      (dot.material as THREE.MeshBasicMaterial).opacity =
+        ((dot.userData.target as number) ?? 1) * ease;
+    }
+    container.dataset.arriving = String(arriving);
 
     controls.update();
     renderer.render(scene, camera);

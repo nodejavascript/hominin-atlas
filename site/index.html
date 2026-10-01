@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>hominin-atlas.nodejavascript.com</title>
+    <meta
+      name="description"
+      content="Six million years of human evolution on one globe: every hominin we have a fossil of, where it lived and when, and where two of them met."
+    />
+    <link rel="canonical" href="https://hominin-atlas.nodejavascript.com/" />
+    <meta name="theme-color" content="#ea580c" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- The 180 PNG is declared FIRST, and that order is the rule: Google's
+         accepted favicon formats are BMP, GIF, ICO, PNG, JPEG, PPM and TIFF, and
+         SVG is not among them. A head that leads with the SVG hands Google a
+         32-pixel fallback. -->
+    <link rel="icon" type="image/png" sizes="180x180" href="/favicon-180.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="hominin-atlas.nodejavascript.com" />
+    <meta property="og:title" content="Every hominin we know of, on one globe" />
+    <meta
+      property="og:description"
+      content="Six million years, twenty-two hominins, and the places where two of them met. Drag the timeline and watch species appear and disappear."
+    />
+    <meta property="og:url" content="https://hominin-atlas.nodejavascript.com/" />
+    <meta property="og:image" content="https://hominin-atlas.nodejavascript.com/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Every hominin we know of, on one globe" />
+    <meta
+      name="twitter:description"
+      content="Six million years, twenty-two hominins, and the places where two of them met."
+    />
+    <meta name="twitter:image" content="https://hominin-atlas.nodejavascript.com/og.png" />
+
+    <link rel="stylesheet" href="./styles.css" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "name": "hominin-atlas.nodejavascript.com",
+            "url": "https://hominin-atlas.nodejavascript.com/",
+            "inLanguage": "en"
+          },
+          {
+            "@type": "WebPage",
+            "name": "Every hominin we know of, on one globe",
+            "url": "https://hominin-atlas.nodejavascript.com/",
+            "description": "An interactive globe of human evolution: every hominin with a fossil record, its distribution and its dates, and the contact events between species.",
+            "isPartOf": { "@type": "WebSite", "url": "https://hominin-atlas.nodejavascript.com/" },
+            "publisher": { "@type": "Organization", "name": "nodejavascript.com" }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What does one dot on the globe represent?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "One excavated locality — a cave, a lakeshore, a gravel bed where hominin fossils or tools have been found and dated. The colour is the species. The size is the population estimate, and where no estimate has ever been published the dot is drawn at a nominal size and marked as such, because the alternative is to invent a number."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Where do the dates come from?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Each date is as published in the paper cited on the dot itself. Where the literature disagrees — Madjedbebe's 65,000 years is the clearest example — the map marks the date contested rather than choosing a side."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Why does the map sometimes show land where there is sea?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Because during a glacial period the sea stood as much as 120 metres lower and the continental shelf was dry. Sunda, Sahul, Beringia and the floor of the North Sea were walkable. The shelf is drawn for glacial intervals in the last 1.2 million years only, because earlier than that the ice-age cycle is not resolved well enough to draw a coastline from."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Did modern humans wipe out the Neanderthals?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "They disappeared, and they did not disappear entirely: every living person whose ancestry lies outside sub-Saharan Africa carries about 1.5 to 2 percent Neanderthal DNA. What ended was the population, not the lineage. The map draws the last appearances and the admixture events as two separate things because they are two separate things."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does this site track me?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. There is no account, no form and no upload. Nothing you do here is sent anywhere. Google Analytics loads only if you accept the cookie question, and a refusal makes no request to Google and sets no cookie at all."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+
+    <!-- NOTHING FROM GOOGLE IS IN THIS PAGE.
+
+         consent.js appends the analytics tag only after a visitor says yes, so a
+         visit that refuses makes no request to Google and receives no cookie.
+         The measurement id rides on the consent script as an attribute and is
+         filled on deploy day, together with the DNS record and the Analytics
+         property — see DEPLOY-DAY.md. Until then the gate finds no id, loads
+         nothing, and the page is correct with no analytics at all. -->
+    <script src="./consent.js" data-ga-id="" defer></script>
+    <script type="module" src="./app.js"></script>
+  </head>
+
+  <body>
+    <!-- The abstract layer. This site's drawing is a repeating field of
+         CHEVRONS — the dispersal mark — on its own fixed layer and masked so it
+         fades at the edges rather than stopping at a visible boundary. -->
+    <div class="dvs-pattern" aria-hidden="true"></div>
+
+    <a class="skip" href="#map">Skip to the globe</a>
+
+    <header class="top">
+      <a class="brand" href="/">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="26" height="26">
+            <g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+              <circle cx="16" cy="16" r="11.4" />
+              <path d="M6.2 20.8C10.2 14.6 16.4 10.8 25.9 11.4" />
+            </g>
+            <g fill="currentColor">
+              <circle cx="9.4" cy="19.1" r="2.1" />
+              <circle cx="15.8" cy="13.6" r="1.5" />
+              <circle cx="21.6" cy="11.8" r="1.3" />
+              <circle cx="25.9" cy="11.4" r="1.7" />
+            </g>
+          </svg>
+        </span>
+        <span>
+          <b>hominin-atlas</b>
+          <small>nodejavascript.com</small>
+        </span>
+      </a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1>
+          Everyone alive is descended from a handful of people who walked out of
+          Africa — and from the species they met on the way.
+        </h1>
+        <p class="lede">
+          This is that story on one globe. Every hominin we have a fossil of,
+          where it lived and when. Drag the timeline and watch species appear and
+          disappear — and watch the places where two of them were in the same
+          landscape at the same time, which is not where the word
+          &ldquo;replaced&rdquo; usually points.
+        </p>
+        <p class="capability">
+          Six million years · <b id="countSpecies">23</b> hominins ·
+          <b id="countLocalities">123</b> excavated localities · every date carrying
+          the paper it came from.
+        </p>
+      </section>
+
+      <section id="map" class="map" aria-label="Globe of hominin distribution">
+        <div class="globe-wrap">
+          <div id="globe" class="globe"></div>
+          <div class="globe-hud">
+            <p class="year"><span id="yearReadout">300 thousand years ago</span></p>
+            <p class="era" id="eraReadout">Pleistocene</p>
+          </div>
+          <div class="globe-legend" id="legend" aria-label="Species colour key"></div>
+        </div>
+
+        <div class="timeline">
+          <div class="timeline-row">
+            <button id="play" class="play" type="button" aria-pressed="false">Play</button>
+            <input
+              id="timeline"
+              class="slider"
+              type="range"
+              min="0"
+              max="1000"
+              step="1"
+              value="600"
+              aria-label="Time before the present"
+            />
+          </div>
+          <div class="stations" id="stations"></div>
+          <div class="stats" id="stats"></div>
+          <p class="sea" id="seaReadout"></p>
+        </div>
+
+        <aside class="panel" id="panel" hidden aria-live="polite"></aside>
+      </section>
+
+      <section class="chart" aria-label="Species ranges over time">
+        <h2>Who was alive, and when</h2>
+        <p class="note">
+          The strip below uses the same scale as the slider, so the vertical line
+          is the moment on the globe. A bar is a species' whole known range.
+        </p>
+        <div class="bars" id="bars">
+          <div class="bar-marker" id="barMarker" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <section class="clashes" aria-label="Contact events">
+        <h2>Where they met</h2>
+        <p class="note">
+          Every row below is a place and a window where two hominins were in the
+          same region — and what the evidence says came of it. Press one to fly
+          there.
+        </p>
+        <div class="contacts" id="contacts"></div>
+      </section>
+
+      <section class="honesty" id="honesty">
+        <h2>What this map will not do</h2>
+        <p id="honestyNumbers"></p>
+        <ul>
+          <li>
+            <b>It will not draw a population it cannot source.</b> Of the
+            localities here, most have no published population estimate at all.
+            Those dots still have to have a size, so they have a nominal one — and
+            the panel says so, in those words, when you open them.
+          </li>
+          <li>
+            <b>It will not resolve a dispute.</b> Where the literature disagrees,
+            the date is marked <i>contested</i> and both readings are shown. The
+            65,000-year date for Madjedbebe, in Australia, is the clearest example
+            on this map and is drawn as contested rather than as settled.
+          </li>
+          <li>
+            <b>It will not show a coastline that was not there.</b> The shaded
+            shelf is drawn only for glacial periods in the last 1.2 million years.
+            Further back the ice-age cycle was 41,000 years long and the record is
+            not resolved enough to draw a coast from, so nothing is drawn.
+          </li>
+          <li>
+            <b>It will not draw a route as a measured path.</b> A route here is a
+            line through dated sites in the order the archaeology reaches them.
+            Nobody walked a straight line from Ethiopia to Java, and a line drawn
+            1.8 million years long is a summary of a process that took tens of
+            thousands of years.
+          </li>
+          <li>
+            <b>It will not pretend the record is complete.</b> Whole species on
+            this map are known from a single bone, a single jaw, or from nothing
+            but a statistical signal in living genomes. The ghost population in
+            West Africa has no fossil at all, and it is drawn as a ghost.
+          </li>
+        </ul>
+      </section>
+
+      <section class="sources" id="sources">
+        <h2>The papers behind every date</h2>
+        <p class="note">
+          Each entry below is cited by at least one dot, route or event on this
+          page. Links go to the publisher or the DOI resolver.
+        </p>
+        <ul class="refs refs-full" id="sourceList"></ul>
+      </section>
+
+      <section class="privacy" id="privacy">
+        <h2>Privacy</h2>
+        <p>
+          This page collects nothing. There is no account, no form, no upload and
+          no server-side storage: the globe is drawn in your browser from data
+          that ships with the page, and the species filter and timeline position
+          live in that tab's memory and are gone when the tab closes.
+        </p>
+        <p>
+          The one thing that could leave your browser is anonymous measurement.
+          <b>Google Analytics loads only if you accept it.</b> If you refuse, no
+          request is made to Google, no cookie is set, and nothing is recorded —
+          not "cookies disabled", but never loaded. Your answer is kept in this
+          browser's local storage, not in a cookie, and the footer's
+          <em>Cookie settings</em> button changes it at any time.
+        </p>
+        <p>
+          The map, the coastline data and the three-dimensional library are all
+          served from this domain. Following a citation link to a paper leaves
+          this site and goes to the publisher, which has its own policy.
+        </p>
+        <p class="stamp">Last changed: 30 September 2026.</p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="22" height="22">
+            <g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+              <circle cx="16" cy="16" r="11.4" />
+              <path d="M6.2 20.8C10.2 14.6 16.4 10.8 25.9 11.4" />
+            </g>
+            <g fill="currentColor">
+              <circle cx="9.4" cy="19.1" r="2.1" />
+              <circle cx="15.8" cy="13.6" r="1.5" />
+              <circle cx="21.6" cy="11.8" r="1.3" />
+              <circle cx="25.9" cy="11.4" r="1.7" />
+            </g>
+          </svg>
+        </span>
+        <span><b>hominin-atlas</b> · <a href="https://nodejavascript.com/">nodejavascript.com</a></span>
+      </div>
+      <p class="footer-links">
+        <a
+          class="repo"
+          href="https://github.com/nodejavascript/hominin-atlas"
+          rel="noopener"
+          title="This project's own source — github.com/nodejavascript/hominin-atlas"
+          ><svg
+            class="gh-star"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            focusable="false"
+          ><path
+            d="M12 2.4l2.9 6.1 6.7.9-4.9 4.7 1.2 6.6L12 17.6 6.1 20.7l1.2-6.6L2.4 9.4l6.7-.9z"
+          /></svg
+          >github.com/nodejavascript/hominin-atlas</a
+        >
+        ·
+        <a href="#sources">Sources</a>
+        ·
+        <a href="#privacy">Privacy</a>
+        ·
+        <button id="consentBtn" class="linkish" type="button">Cookie settings</button>
+      </p>
+      <p class="footer-copy">© 2026 hominin-atlas.nodejavascript.com. All rights reserved.</p>
+    </footer>
+
+    <!-- The cookie bar. It is in the page but never loads anything by itself;
+         consent.js is the only thing that may append Google's script, and only
+         after the answer above. -->
+    <div class="consent-bar" id="consentBar" hidden>
+      <div class="consent-inner">
+        <div class="consent-ask" id="consentAsk">
+          <p>
+            <b>May this page count the visit?</b> Analytics is off until you say
+            otherwise, and refusing means no request is made to Google at all.
+          </p>
+          <div class="consent-actions">
+            <button id="consentDecline" class="btn ghost" type="button">Reject all</button>
+            <button id="consentAccept" class="btn" type="button">Accept all</button>
+            <button id="consentSettings" class="linkish" type="button">Settings</button>
+          </div>
+        </div>
+        <div class="consent-prefs" id="consentPrefs" hidden>
+          <div class="consent-prefs-head">
+            <b>Your choices</b>
+            <button class="consent-close" id="consentClose" type="button" aria-label="Close">×</button>
+          </div>
+          <div class="consent-row">
+            <span>Anonymous page, click and scroll measurement</span>
+            <button
+              class="switch"
+              id="consentAnalytics"
+              type="button"
+              role="switch"
+              aria-checked="false"
+              aria-label="Analytics"
+            >
+              <span class="switch-word" id="consentAnalyticsWord">Off</span>
+            </button>
+          </div>
+          <p class="consent-foot">
+            Nothing else is measured, and nothing you do on this page is sent
+            anywhere whatever you choose here.
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

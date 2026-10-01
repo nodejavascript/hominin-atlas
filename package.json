@@ -1,0 +1,32 @@
+{
+  "name": "hominin-atlas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Static site for hominin-atlas.nodejavascript.com — every hominin we know of, where they lived and when, on one globe.",
+  "scripts": {
+    "build": "node tools/build.mjs && tsc --noEmit",
+    "test": "npm run build && node --test test/data.test.js test/static.test.js",
+    "test:e2e": "npm run build && node --test test/e2e.test.js",
+    "test:all": "npm run build && node --test test/*.test.js",
+    "icons": "python3 tools/make-icons.py",
+    "serve": "node tools/serve.js",
+    "deploy": "bash tools/deploy.sh"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "three": "^0.186.1",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/geojson": "^7946.0.16",
+    "@types/three": "^0.186.0",
+    "@types/topojson-client": "^3.1.5",
+    "esbuild": "^0.28.2",
+    "playwright": "^1.63.0",
+    "typescript": "^7.0.2"
+  }
+}

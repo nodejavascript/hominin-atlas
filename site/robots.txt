@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hominin-atlas.nodejavascript.com/sitemap.xml

@@ -1,0 +1,155 @@
+{
+  "_note": "One row per excavated locality. `from`/`to` are years before 1950 the locality is occupied or dated to. `pop` is an estimate of the number of individuals the locality represents at that time, and `pb` says what that number rests on: 'published' means a figure exists in the literature cited, 'scaled' means it is derived from a regional figure, and 'nominal' means NO estimate exists for this locality and a nominal figure is used so the map has a shape. A nominal figure is not a measurement and the page shows it differently. `c` is confidence: dated | secure | contested | inferred.",
+
+  "presences": [
+    { "id": "aramis", "s": "ardipithecus", "site": "Aramis", "region": "Middle Awash, Ethiopia", "lat": 10.47, "lon": 40.53, "from": 4400000, "to": 4400000, "pop": 600, "pb": "nominal", "c": "dated", "src": ["white2009"] },
+    { "id": "asduma", "s": "ardipithecus", "site": "As Duma", "region": "Gona, Ethiopia", "lat": 11.11, "lon": 40.31, "from": 4500000, "to": 4300000, "pop": 600, "pb": "nominal", "c": "secure", "src": ["white2009"] },
+
+    { "id": "kanapoi", "s": "anamensis", "site": "Kanapoi", "region": "Turkana, Kenya", "lat": 2.30, "lon": 36.08, "from": 4200000, "to": 4100000, "pop": 800, "pb": "nominal", "c": "dated", "src": ["leakey1995"] },
+    { "id": "alliabay", "s": "anamensis", "site": "Allia Bay", "region": "Turkana, Kenya", "lat": 3.60, "lon": 36.20, "from": 4100000, "to": 3900000, "pop": 800, "pb": "nominal", "c": "secure", "src": ["leakey1995"] },
+    { "id": "woranso", "s": "anamensis", "site": "Woranso-Mille (MRD cranium)", "region": "Afar, Ethiopia", "lat": 11.45, "lon": 40.30, "from": 3900000, "to": 3800000, "pop": 800, "pb": "nominal", "c": "dated", "src": ["haile2019"] },
+
+    { "id": "hadar", "s": "afarensis", "site": "Hadar (\"Lucy\", AL 288-1)", "region": "Afar, Ethiopia", "lat": 11.10, "lon": 40.58, "from": 3500000, "to": 3200000, "pop": 1500, "pb": "nominal", "c": "dated", "src": ["kimbel1994"] },
+    { "id": "laetoli", "s": "afarensis", "site": "Laetoli (footprint trails)", "region": "Tanzania", "lat": -3.22, "lon": 35.19, "from": 3660000, "to": 3660000, "pop": 1500, "pb": "nominal", "c": "dated", "src": ["raichlen2010"] },
+    { "id": "dikika", "s": "afarensis", "site": "Dikika (\"Selam\")", "region": "Afar, Ethiopia", "lat": 11.05, "lon": 40.55, "from": 3400000, "to": 3300000, "pop": 1500, "pb": "nominal", "c": "dated", "src": ["kimbel1994"] },
+    { "id": "lomekwi", "s": "afarensis", "site": "Lomekwi 3 (tools older than the genus)", "region": "West Turkana, Kenya", "lat": 3.90, "lon": 36.00, "from": 3300000, "to": 3300000, "pop": 1500, "pb": "nominal", "c": "dated", "src": ["harmand2015"] },
+
+    { "id": "taung", "s": "africanus", "site": "Taung", "region": "South Africa", "lat": -27.55, "lon": 24.78, "from": 2800000, "to": 2500000, "pop": 1200, "pb": "nominal", "c": "contested", "src": ["dart1925"] },
+    { "id": "sterkfontein", "s": "africanus", "site": "Sterkfontein (StW 573, \"Little Foot\")", "region": "Cradle of Humankind, South Africa", "lat": -26.02, "lon": 27.73, "from": 3300000, "to": 2100000, "pop": 1200, "pb": "nominal", "c": "contested", "src": ["clarke2019"] },
+    { "id": "makapansgat", "s": "africanus", "site": "Makapansgat", "region": "Limpopo, South Africa", "lat": -24.15, "lon": 29.20, "from": 3000000, "to": 2600000, "pop": 1200, "pb": "nominal", "c": "secure", "src": ["dart1925"] },
+
+    { "id": "malapa", "s": "sediba", "site": "Malapa", "region": "Cradle of Humankind, South Africa", "lat": -25.89, "lon": 27.75, "from": 1980000, "to": 1980000, "pop": 400, "pb": "nominal", "c": "dated", "src": ["pickering2011"] },
+
+    { "id": "swartkrans", "s": "robustus", "site": "Swartkrans", "region": "Cradle of Humankind, South Africa", "lat": -25.97, "lon": 27.72, "from": 1900000, "to": 1400000, "pop": 1500, "pb": "nominal", "c": "secure", "src": ["brain1950"] },
+    { "id": "kromdraai", "s": "robustus", "site": "Kromdraai", "region": "Cradle of Humankind, South Africa", "lat": -25.98, "lon": 27.75, "from": 2000000, "to": 1600000, "pop": 1500, "pb": "nominal", "c": "secure", "src": ["brain1950"] },
+    { "id": "drimolen", "s": "robustus", "site": "Drimolen", "region": "Cradle of Humankind, South Africa", "lat": -25.87, "lon": 27.75, "from": 2000000, "to": 1700000, "pop": 1500, "pb": "nominal", "c": "secure", "src": ["susman2001"] },
+
+    { "id": "olduvai_boisei", "s": "boisei", "site": "Olduvai Gorge (OH 5, \"Zinj\")", "region": "Tanzania", "lat": -2.98, "lon": 35.35, "from": 1800000, "to": 1400000, "pop": 1500, "pb": "nominal", "c": "dated", "src": ["leakey1959"] },
+    { "id": "koobifora_boisei", "s": "boisei", "site": "Koobi Fora", "region": "Turkana, Kenya", "lat": 3.95, "lon": 36.19, "from": 2000000, "to": 1500000, "pop": 1500, "pb": "nominal", "c": "secure", "src": ["wood2011"] },
+    { "id": "konso_boisei", "s": "boisei", "site": "Konso", "region": "Ethiopia", "lat": 5.30, "lon": 37.40, "from": 1900000, "to": 1400000, "pop": 1500, "pb": "nominal", "c": "secure", "src": ["wood2011"] },
+    { "id": "peninj", "s": "boisei", "site": "Peninj (Natron)", "region": "Tanzania", "lat": -2.35, "lon": 35.85, "from": 1800000, "to": 1400000, "pop": 1500, "pb": "nominal", "c": "secure", "src": ["wood2011"] },
+
+    { "id": "olduvai_habilis", "s": "habilis", "site": "Olduvai Gorge (OH 7, the type)", "region": "Tanzania", "lat": -2.99, "lon": 35.34, "from": 1830000, "to": 1770000, "pop": 2000, "pb": "nominal", "c": "dated", "src": ["leakey1964", "spoor2015"] },
+    { "id": "koobifora_habilis", "s": "habilis", "site": "Koobi Fora (ER 1470)", "region": "Turkana, Kenya", "lat": 3.97, "lon": 36.18, "from": 1950000, "to": 1780000, "pop": 2000, "pb": "nominal", "c": "dated", "src": ["spoor2015"] },
+    { "id": "hadar_habilis", "s": "habilis", "site": "Hadar (AL 666-1, with Oldowan tools)", "region": "Afar, Ethiopia", "lat": 11.12, "lon": 40.57, "from": 2340000, "to": 2340000, "pop": 2000, "pb": "nominal", "c": "contested", "src": ["spoor2015"] },
+    { "id": "gona", "s": "homo_early", "site": "Gona — the oldest known Oldowan tools, maker not identified", "region": "Afar, Ethiopia", "lat": 11.09, "lon": 40.30, "from": 2600000, "to": 2500000, "pop": 2000, "pb": "nominal", "c": "inferred", "src": ["harmand2015"] },
+
+    { "id": "nariokotome", "s": "ergaster", "site": "Nariokotome (KNM-WT 15000, \"Turkana Boy\")", "region": "West Turkana, Kenya", "lat": 4.10, "lon": 35.87, "from": 1600000, "to": 1500000, "pop": 2500, "pb": "nominal", "c": "dated", "src": ["walker1985", "ruf2001"] },
+    { "id": "buia", "s": "erectus", "site": "Buia (UA 31)", "region": "Eritrea", "lat": 15.30, "lon": 39.80, "from": 1000000, "to": 1000000, "pop": 2500, "pb": "nominal", "c": "dated", "src": ["anta2017"] },
+    { "id": "olduvai_ergaster", "s": "erectus", "site": "Olduvai Gorge (OH 9)", "region": "Tanzania", "lat": -2.97, "lon": 35.36, "from": 1250000, "to": 1200000, "pop": 2500, "pb": "nominal", "c": "secure", "src": ["anta2017"] },
+
+    { "id": "dmanisi", "s": "erectus", "site": "Dmanisi — five crania, the first out of Africa", "region": "Georgia, Caucasus", "lat": 41.33, "lon": 44.35, "from": 1850000, "to": 1770000, "pop": 5000, "pb": "nominal", "c": "dated", "src": ["lordkipanidze2013", "anta2017"] },
+    { "id": "ubeidiya", "s": "erectus", "site": "\u2018Ubeidiya", "region": "Jordan Valley, Israel", "lat": 32.70, "lon": 35.57, "from": 1600000, "to": 1400000, "pop": 5000, "pb": "nominal", "c": "secure", "src": ["anta2017"] },
+    { "id": "sangiran", "s": "erectus", "site": "Sangiran", "region": "Java, Indonesia", "lat": -7.45, "lon": 110.83, "from": 1600000, "to": 900000, "pop": 5000, "pb": "nominal", "c": "dated", "src": ["anta2017"] },
+    { "id": "trinil", "s": "erectus", "site": "Trinil (Dubois' Pithecanthropus)", "region": "Java, Indonesia", "lat": -7.37, "lon": 111.33, "from": 1000000, "to": 700000, "pop": 5000, "pb": "nominal", "c": "secure", "src": ["anta2017"] },
+    { "id": "ngandong", "s": "erectus", "site": "Ngandong — the last Homo erectus", "region": "Solo River, Java, Indonesia", "lat": -7.20, "lon": 111.43, "from": 117000, "to": 108000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["rizal2020"] },
+    { "id": "yuanmou", "s": "erectus", "site": "Yuanmou (two incisors)", "region": "Yunnan, China", "lat": 25.72, "lon": 101.85, "from": 1700000, "to": 1700000, "pop": 5000, "pb": "nominal", "c": "contested", "src": ["zhu2018"] },
+    { "id": "shangchen", "s": "homo_early", "site": "Shangchen — stone tools at 2.1 Ma, maker not identified", "region": "Loess Plateau, China", "lat": 34.30, "lon": 109.70, "from": 2120000, "to": 1260000, "pop": 5000, "pb": "nominal", "c": "dated", "src": ["zhu2018"] },
+    { "id": "gongwangling", "s": "erectus", "site": "Gongwangling (Lantian)", "region": "Shaanxi, China", "lat": 34.10, "lon": 109.30, "from": 1660000, "to": 1630000, "pop": 5000, "pb": "nominal", "c": "dated", "src": ["zhu2018"] },
+    { "id": "zhoukoudian", "s": "erectus", "site": "Zhoukoudian (\"Peking Man\")", "region": "Beijing, China", "lat": 39.69, "lon": 115.92, "from": 780000, "to": 400000, "pop": 5000, "pb": "nominal", "c": "dated", "src": ["anta2017"] },
+    { "id": "attirampakkam", "s": "erectus", "site": "Attirampakkam — Acheulean in south India", "region": "Tamil Nadu, India", "lat": 13.23, "lon": 79.90, "from": 1500000, "to": 1400000, "pop": 5000, "pb": "nominal", "c": "contested", "src": ["pappu2011"] },
+    { "id": "riwat", "s": "erectus", "site": "Riwat", "region": "Soan Valley, Pakistan", "lat": 33.50, "lon": 73.20, "from": 1900000, "to": 1500000, "pop": 4000, "pb": "nominal", "c": "contested", "src": ["anta2017"] },
+    { "id": "gbay", "s": "erectus", "site": "Gesher Benot Ya\u2018aqov — controlled fire", "region": "Hula Valley, Israel", "lat": 33.01, "lon": 35.62, "from": 790000, "to": 790000, "pop": 5000, "pb": "nominal", "c": "dated", "src": ["anta2017"] },
+    { "id": "happisburgh", "s": "erectus", "site": "Happisburgh — footprints at the edge of the boreal zone", "region": "Norfolk, England", "lat": 52.82, "lon": 1.53, "from": 900000, "to": 850000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["parfitt2010"] },
+    { "id": "masol", "s": "homo_early", "site": "Masol — cut-marked bone, maker not identified", "region": "Siwaliks, India", "lat": 30.90, "lon": 76.60, "from": 2600000, "to": 2200000, "pop": 4000, "pb": "nominal", "c": "contested", "src": ["anta2017"] },
+
+    { "id": "grandolina", "s": "antecessor", "site": "Gran Dolina (TD6), Atapuerca", "region": "Burgos, Spain", "lat": 42.35, "lon": -3.52, "from": 900000, "to": 770000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["carbonell1995", "welker2020"] },
+
+    { "id": "mauer", "s": "heidelbergensis", "site": "Mauer (the type mandible)", "region": "Baden-W\u00fcrttemberg, Germany", "lat": 49.34, "lon": 8.79, "from": 609000, "to": 609000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+    { "id": "sima", "s": "heidelbergensis", "site": "Sima de los Huesos — 28+ individuals", "region": "Atapuerca, Spain", "lat": 42.35, "lon": -3.52, "from": 434000, "to": 427000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["arsuaga2014", "meyer2016"] },
+    { "id": "steinsheim", "s": "heidelbergensis", "site": "Steinheim", "region": "Baden-W\u00fcrttemberg, Germany", "lat": 48.97, "lon": 9.28, "from": 400000, "to": 300000, "pop": 4000, "pb": "nominal", "c": "secure", "src": ["stringer2016"] },
+    { "id": "arago", "s": "heidelbergensis", "site": "Caune de l'Arago (Tautavel)", "region": "Pyr\u00e9n\u00e9es-Orientales, France", "lat": 42.85, "lon": 2.75, "from": 570000, "to": 400000, "pop": 4000, "pb": "nominal", "c": "secure", "src": ["stringer2016"] },
+    { "id": "boxgrove", "s": "heidelbergensis", "site": "Boxgrove", "region": "West Sussex, England", "lat": 50.87, "lon": -0.71, "from": 524000, "to": 480000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+    { "id": "schoningen", "s": "heidelbergensis", "site": "Sch\u00f6ningen — wooden spears", "region": "Lower Saxony, Germany", "lat": 52.14, "lon": 10.95, "from": 340000, "to": 300000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+    { "id": "petralona", "s": "heidelbergensis", "site": "Petralona", "region": "Chalkidiki, Greece", "lat": 40.37, "lon": 23.15, "from": 700000, "to": 300000, "pop": 4000, "pb": "nominal", "c": "contested", "src": ["stringer2016"] },
+    { "id": "ceprano", "s": "heidelbergensis", "site": "Ceprano", "region": "Lazio, Italy", "lat": 41.55, "lon": 13.52, "from": 450000, "to": 350000, "pop": 4000, "pb": "nominal", "c": "contested", "src": ["stringer2016"] },
+
+    { "id": "bodo", "s": "rhodesiensis", "site": "Bodo", "region": "Middle Awash, Ethiopia", "lat": 10.10, "lon": 40.40, "from": 600000, "to": 600000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["white2003b"] },
+    { "id": "kabwe", "s": "rhodesiensis", "site": "Kabwe (Broken Hill)", "region": "Zambia", "lat": -14.55, "lon": 28.42, "from": 324000, "to": 274000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+    { "id": "florisbad", "s": "rhodesiensis", "site": "Florisbad", "region": "Free State, South Africa", "lat": -28.77, "lon": 26.07, "from": 259000, "to": 259000, "pop": 4000, "pb": "nominal", "c": "contested", "src": ["stringer2016"] },
+    { "id": "eyasi", "s": "rhodesiensis", "site": "Eyasi", "region": "Tanzania", "lat": -3.60, "lon": 35.00, "from": 300000, "to": 130000, "pop": 4000, "pb": "nominal", "c": "contested", "src": ["stringer2016"] },
+    { "id": "kapthurin", "s": "rhodesiensis", "site": "Kapthurin Formation", "region": "Lake Baringo, Kenya", "lat": 0.50, "lon": 36.00, "from": 285000, "to": 235000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+
+    { "id": "risingstar", "s": "naledi", "site": "Rising Star (Dinaledi + Lesedi chambers)", "region": "Cradle of Humankind, South Africa", "lat": -25.90, "lon": 27.75, "from": 335000, "to": 236000, "pop": 1000, "pb": "nominal", "c": "dated", "src": ["berger2015", "dirks2017"] },
+
+    { "id": "harbin", "s": "longi", "site": "Harbin (the \"Dragon Man\" cranium)", "region": "Heilongjiang, China", "lat": 45.75, "lon": 126.63, "from": 309000, "to": 138000, "pop": 4000, "pb": "nominal", "c": "contested", "src": ["ni2021", "ji2021"] },
+    { "id": "dali", "s": "longi", "site": "Dali", "region": "Shaanxi, China", "lat": 34.80, "lon": 109.90, "from": 300000, "to": 260000, "pop": 4000, "pb": "nominal", "c": "secure", "src": ["ni2021"] },
+    { "id": "jinniushan", "s": "longi", "site": "Jinniushan", "region": "Liaoning, China", "lat": 40.58, "lon": 122.53, "from": 260000, "to": 200000, "pop": 4000, "pb": "nominal", "c": "secure", "src": ["ni2021"] },
+    { "id": "xuchang", "s": "longi", "site": "Xuchang (Lingjing)", "region": "Henan, China", "lat": 34.03, "lon": 113.85, "from": 125000, "to": 105000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["ni2021"] },
+
+    { "id": "nesherramla", "s": "nesher_ramla", "site": "Nesher Ramla", "region": "Central Israel", "lat": 31.90, "lon": 34.90, "from": 140000, "to": 120000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["hershkovitz2021"] },
+
+    { "id": "krapina", "s": "neanderthalensis", "site": "Krapina", "region": "Croatia", "lat": 46.16, "lon": 15.86, "from": 130000, "to": 120000, "pop": 10000, "pb": "scaled", "c": "dated", "src": ["green2010"] },
+    { "id": "vindija", "s": "neanderthalensis", "site": "Vindija Cave (the high-coverage genome)", "region": "Croatia", "lat": 46.29, "lon": 16.07, "from": 52000, "to": 44000, "pop": 10000, "pb": "scaled", "c": "dated", "src": ["prufer2017"] },
+    { "id": "kebara", "s": "neanderthalensis", "site": "Kebara Cave", "region": "Mount Carmel, Israel", "lat": 32.68, "lon": 34.97, "from": 65000, "to": 48000, "pop": 10000, "pb": "scaled", "c": "dated", "src": ["green2010"] },
+    { "id": "shanidar", "s": "neanderthalensis", "site": "Shanidar Cave", "region": "Zagros, Iraq", "lat": 36.83, "lon": 44.22, "from": 70000, "to": 45000, "pop": 10000, "pb": "scaled", "c": "dated", "src": ["green2010"] },
+    { "id": "denisova_neander", "s": "neanderthalensis", "site": "Denisova Cave — Neanderthals east of the Altai", "region": "Altai Krai, Russia", "lat": 51.40, "lon": 84.68, "from": 190000, "to": 90000, "pop": 10000, "pb": "scaled", "c": "dated", "src": ["prufer2014", "jacobs2019"] },
+    { "id": "chagyrskaya", "s": "neanderthalensis", "site": "Chagyrskaya Cave — a small, isolated population", "region": "Altai Krai, Russia", "lat": 51.55, "lon": 83.60, "from": 60000, "to": 50000, "pop": 6000, "pb": "published", "c": "dated", "src": ["prufer2014"] },
+    { "id": "mezmaiskaya", "s": "neanderthalensis", "site": "Mezmaiskaya Cave", "region": "North Caucasus, Russia", "lat": 44.17, "lon": 40.00, "from": 70000, "to": 39000, "pop": 10000, "pb": "scaled", "c": "dated", "src": ["higham2014"] },
+    { "id": "elcobron", "s": "neanderthalensis", "site": "El Sidr\u00f3n", "region": "Asturias, Spain", "lat": 43.38, "lon": -5.43, "from": 49000, "to": 49000, "pop": 8000, "pb": "nominal", "c": "dated", "src": ["higham2014"] },
+    { "id": "gorhams", "s": "neanderthalensis", "site": "Gorham's Cave — among the last", "region": "Gibraltar", "lat": 36.12, "lon": -5.34, "from": 48000, "to": 40000, "pop": 4000, "pb": "nominal", "c": "contested", "src": ["higham2014"] },
+    { "id": "saintcesaire", "s": "neanderthalensis", "site": "Saint-C\u00e9saire", "region": "Charente-Maritime, France", "lat": 45.77, "lon": -0.46, "from": 42000, "to": 40000, "pop": 6000, "pb": "nominal", "c": "dated", "src": ["higham2014"] },
+    { "id": "lachapelle", "s": "neanderthalensis", "site": "La Chapelle-aux-Saints", "region": "Corr\u00e8ze, France", "lat": 45.03, "lon": 1.72, "from": 60000, "to": 50000, "pop": 8000, "pb": "nominal", "c": "secure", "src": ["higham2014"] },
+    { "id": "lemoustier", "s": "neanderthalensis", "site": "Le Moustier", "region": "Dordogne, France", "lat": 44.99, "lon": 1.06, "from": 56000, "to": 40000, "pop": 8000, "pb": "nominal", "c": "secure", "src": ["higham2014"] },
+
+    { "id": "denisova_cave", "s": "denisova", "site": "Denisova Cave (Denisova 3 finger bone)", "region": "Altai Krai, Russia", "lat": 51.40, "lon": 84.68, "from": 200000, "to": 50000, "pop": 8000, "pb": "scaled", "c": "dated", "src": ["reich2010", "jacobs2019"] },
+    { "id": "baishiya", "s": "denisova", "site": "Baishiya Karst Cave (Xiahe mandible)", "region": "Tibetan Plateau, China", "lat": 35.45, "lon": 102.60, "from": 160000, "to": 160000, "pop": 8000, "pb": "scaled", "c": "dated", "src": ["chen2019"] },
+
+    { "id": "liangbua", "s": "floresiensis", "site": "Liang Bua", "region": "Flores, Indonesia", "lat": -8.53, "lon": 120.44, "from": 100000, "to": 60000, "pop": 1500, "pb": "nominal", "c": "dated", "src": ["brown2004", "sutikna2016"] },
+    { "id": "matamenge", "s": "floresiensis", "site": "Mata Menge — the ancestral form at 700 ka", "region": "Flores, Indonesia", "lat": -8.50, "lon": 121.10, "from": 700000, "to": 700000, "pop": 1500, "pb": "nominal", "c": "dated", "src": ["brumm2016"] },
+
+    { "id": "callao", "s": "luzonensis", "site": "Callao Cave", "region": "Luzon, Philippines", "lat": 17.70, "lon": 121.85, "from": 67000, "to": 50000, "pop": 1200, "pb": "nominal", "c": "dated", "src": ["detroit2019"] },
+
+    { "id": "jebelirhoud", "s": "sapiens", "site": "Jebel Irhoud — the oldest accepted Homo sapiens", "region": "Morocco", "lat": 31.85, "lon": -8.87, "from": 315000, "to": 286000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["hublin2017", "richter2017"] },
+    { "id": "omokibish", "s": "sapiens", "site": "Omo Kibish (Omo I)", "region": "Ethiopia", "lat": 4.80, "lon": 35.97, "from": 233000, "to": 233000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["vidal2022"] },
+    { "id": "herto", "s": "sapiens", "site": "Herto (Bouri)", "region": "Middle Awash, Ethiopia", "lat": 10.28, "lon": 40.55, "from": 160000, "to": 160000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["white2003b"] },
+    { "id": "florisbad_sap", "s": "sapiens", "site": "Florisbad (the type of H. helmei)", "region": "Free State, South Africa", "lat": -28.77, "lon": 26.07, "from": 259000, "to": 259000, "pop": 3000, "pb": "nominal", "c": "contested", "src": ["stringer2016"] },
+    { "id": "blombos", "s": "sapiens", "site": "Blombos Cave — engraved ochre, shell beads", "region": "Western Cape, South Africa", "lat": -34.42, "lon": 21.22, "from": 100000, "to": 70000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+    { "id": "pinnaclepoint", "s": "sapiens", "site": "Pinnacle Point", "region": "Western Cape, South Africa", "lat": -34.21, "lon": 22.09, "from": 164000, "to": 90000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+    { "id": "klasies", "s": "sapiens", "site": "Klasies River", "region": "Eastern Cape, South Africa", "lat": -34.11, "lon": 24.39, "from": 120000, "to": 60000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+    { "id": "bordercave", "s": "sapiens", "site": "Border Cave", "region": "KwaZulu-Natal, South Africa", "lat": -27.02, "lon": 31.99, "from": 44000, "to": 44000, "pop": 3000, "pb": "nominal", "c": "contested", "src": ["stringer2016"] },
+    { "id": "sibudu", "s": "sapiens", "site": "Sibudu Cave — bedding and glue", "region": "KwaZulu-Natal, South Africa", "lat": -29.42, "lon": 31.09, "from": 77000, "to": 38000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+    { "id": "diepkloof", "s": "sapiens", "site": "Diepkloof Rock Shelter — engraved ostrich eggshell", "region": "Western Cape, South Africa", "lat": -32.90, "lon": 18.30, "from": 60000, "to": 55000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+    { "id": "taforalt", "s": "sapiens", "site": "Taforalt (Grotte des Pigeons)", "region": "Morocco", "lat": 34.81, "lon": -2.41, "from": 15000, "to": 14000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+    { "id": "katanda", "s": "sapiens", "site": "Katanda — barbed bone points", "region": "Democratic Republic of the Congo", "lat": 0.05, "lon": 29.70, "from": 90000, "to": 75000, "pop": 3000, "pb": "nominal", "c": "contested", "src": ["stringer2016"] },
+    { "id": "aduma", "s": "sapiens", "site": "Aduma", "region": "Middle Awash, Ethiopia", "lat": 10.40, "lon": 40.50, "from": 80000, "to": 80000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["stringer2016"] },
+
+    { "id": "misliya", "s": "sapiens", "site": "Misliya Cave — the earliest modern human outside Africa", "region": "Mount Carmel, Israel", "lat": 32.72, "lon": 34.97, "from": 194000, "to": 177000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["harvati2019"] },
+    { "id": "apidima", "s": "sapiens", "site": "Apidima Cave", "region": "Peloponnese, Greece", "lat": 36.65, "lon": 22.36, "from": 210000, "to": 210000, "pop": 2500, "pb": "nominal", "c": "contested", "src": ["harvati2019"] },
+    { "id": "skhul", "s": "sapiens", "site": "Skhul Cave", "region": "Mount Carmel, Israel", "lat": 32.68, "lon": 34.96, "from": 120000, "to": 90000, "pop": 3000, "pb": "nominal", "c": "contested", "src": ["stringer2016"] },
+    { "id": "qafzeh", "s": "sapiens", "site": "Qafzeh Cave", "region": "Lower Galilee, Israel", "lat": 32.68, "lon": 35.30, "from": 120000, "to": 90000, "pop": 3000, "pb": "nominal", "c": "contested", "src": ["stringer2016"] },
+    { "id": "alwusta", "s": "sapiens", "site": "Al Wusta", "region": "Nefud Desert, Saudi Arabia", "lat": 27.30, "lon": 42.10, "from": 106000, "to": 85000, "pop": 2500, "pb": "nominal", "c": "dated", "src": ["groucutt2018"] },
+    { "id": "jebelfaya", "s": "sapiens", "site": "Jebel Faya", "region": "Sharjah, United Arab Emirates", "lat": 25.12, "lon": 55.85, "from": 127000, "to": 95000, "pop": 2500, "pb": "nominal", "c": "contested", "src": ["groucutt2018"] },
+
+    { "id": "tamplang", "s": "sapiens", "site": "Tam Pa Ling", "region": "Annamite Range, Laos", "lat": 20.20, "lon": 103.90, "from": 70000, "to": 46000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["oconnell2018"] },
+    { "id": "niah", "s": "sapiens", "site": "Niah Cave", "region": "Sarawak, Borneo", "lat": 3.82, "lon": 113.78, "from": 65000, "to": 45000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["barker2007"] },
+    { "id": "lidaajer", "s": "sapiens", "site": "Lida Ajer", "region": "Sumatra, Indonesia", "lat": -0.42, "lon": 100.90, "from": 73000, "to": 63000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["westaway2017"] },
+    { "id": "madjedbebe", "s": "sapiens", "site": "Madjedbebe — and the argument about its age", "region": "Arnhem Land, Australia", "lat": -12.50, "lon": 132.88, "from": 65000, "to": 50000, "pop": 4000, "pb": "nominal", "c": "contested", "src": ["clarkson2017", "williams2021", "oconnell2018"] },
+    { "id": "mungo", "s": "sapiens", "site": "Lake Mungo (cremation burial Mungo I)", "region": "New South Wales, Australia", "lat": -33.75, "lon": 143.10, "from": 42000, "to": 40000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["oconnell2018"] },
+    { "id": "devilslair", "s": "sapiens", "site": "Devil's Lair", "region": "Western Australia", "lat": -34.30, "lon": 115.10, "from": 49000, "to": 45000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["oconnell2018"] },
+
+    { "id": "bachokiro", "s": "sapiens", "site": "Bacho Kiro Cave", "region": "Bulgaria", "lat": 42.87, "lon": 25.32, "from": 45900, "to": 43500, "pop": 5000, "pb": "nominal", "c": "dated", "src": ["hublin2020", "hajdinjak2021"] },
+    { "id": "mandrin", "s": "sapiens", "site": "Grotte Mandrin", "region": "Rh\u00f4ne Valley, France", "lat": 44.50, "lon": 4.90, "from": 56000, "to": 54000, "pop": 4000, "pb": "nominal", "c": "contested", "src": ["higham2014"] },
+    { "id": "kentscavern", "s": "sapiens", "site": "Kent's Cavern", "region": "Devon, England", "lat": 50.47, "lon": -3.50, "from": 44500, "to": 41500, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["higham2014"] },
+    { "id": "zlatykun", "s": "sapiens", "site": "Zlat\u00fd k\u016f\u0148", "region": "Bohemia, Czech Republic", "lat": 49.92, "lon": 14.07, "from": 45000, "to": 45000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["hajdinjak2021"] },
+    { "id": "oase", "s": "sapiens", "site": "Pe\u0219tera cu Oase — a recent Neanderthal great-great-grandparent", "region": "Romania", "lat": 44.90, "lon": 21.40, "from": 42000, "to": 39000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["fu2015"] },
+    { "id": "kostenki", "s": "sapiens", "site": "Kostenki", "region": "Don Valley, Russia", "lat": 51.38, "lon": 39.34, "from": 45000, "to": 25000, "pop": 6000, "pb": "nominal", "c": "dated", "src": ["fu2014"] },
+    { "id": "sunghir", "s": "sapiens", "site": "Sunghir — elaborate burials", "region": "Vladimir, Russia", "lat": 56.18, "lon": 40.51, "from": 34000, "to": 34000, "pop": 5000, "pb": "nominal", "c": "dated", "src": ["fu2014"] },
+    { "id": "ustishim", "s": "sapiens", "site": "Ust'-Ishim", "region": "Western Siberia, Russia", "lat": 57.70, "lon": 71.30, "from": 45000, "to": 45000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["fu2014"] },
+    { "id": "tianyuan", "s": "sapiens", "site": "Tianyuan Cave", "region": "Zhoukoudian, China", "lat": 39.66, "lon": 115.87, "from": 42000, "to": 39000, "pop": 5000, "pb": "nominal", "c": "dated", "src": ["fu2014"] },
+
+    { "id": "beringia", "s": "sapiens", "site": "Beringia — the standstill, east and west of the strait", "region": "Bering Strait region", "lat": 65.80, "lon": -169.00, "from": 28000, "to": 18000, "pop": 6000, "pb": "scaled", "c": "inferred", "src": ["bourgeon2017"] },
+    { "id": "bluefish", "s": "sapiens", "site": "Bluefish Caves", "region": "Yukon, Canada", "lat": 67.15, "lon": -140.90, "from": 24000, "to": 22000, "pop": 3000, "pb": "nominal", "c": "contested", "src": ["bourgeon2017"] },
+    { "id": "whitesands", "s": "sapiens", "site": "White Sands — footprints in a lake margin", "region": "New Mexico, United States", "lat": 32.78, "lon": -106.28, "from": 23000, "to": 21000, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["bennett2021"] },
+    { "id": "monteverde", "s": "sapiens", "site": "Monte Verde", "region": "Southern Chile", "lat": -41.50, "lon": -73.20, "from": 14500, "to": 14500, "pop": 3000, "pb": "nominal", "c": "dated", "src": ["dillehay2008"] },
+    { "id": "meadowcroft", "s": "sapiens", "site": "Meadowcroft Rockshelter", "region": "Pennsylvania, United States", "lat": 40.28, "lon": -80.48, "from": 16000, "to": 13000, "pop": 3000, "pb": "nominal", "c": "contested", "src": ["bennett2021"] },
+    { "id": "clovis", "s": "sapiens", "site": "Clovis type site", "region": "New Mexico, United States", "lat": 34.40, "lon": -103.20, "from": 13000, "to": 12700, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["bennett2021"] },
+    { "id": "anzick", "s": "sapiens", "site": "Anzick — the only Clovis burial", "region": "Montana, United States", "lat": 45.60, "lon": -110.30, "from": 12700, "to": 12700, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["bennett2021"] },
+    { "id": "lagosanta", "s": "sapiens", "site": "Lagoa Santa (Luzia)", "region": "Minas Gerais, Brazil", "lat": -19.60, "lon": -43.90, "from": 11500, "to": 10500, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["dillehay2008"] },
+
+    { "id": "nataruk", "s": "sapiens", "site": "Nataruk — a massacre at 10,000 years ago", "region": "West Turkana, Kenya", "lat": 4.05, "lon": 36.05, "from": 10000, "to": 10000, "pop": 4000, "pb": "nominal", "c": "dated", "src": ["lahr2016"] },
+    { "id": "jebelsahaba", "s": "sapiens", "site": "Jebel Sahaba — the oldest known cemetery with mass violence", "region": "Nile Valley, Sudan", "lat": 21.90, "lon": 31.30, "from": 13300, "to": 13000, "pop": 4000, "pb": "nominal", "c": "contested", "src": ["lahr2016"] },
+
+    { "id": "ghostwa", "s": "ghost_archaic_wa", "site": "No fossil — the signal is in living genomes", "region": "West Africa", "lat": 8.00, "lon": -2.00, "from": 50000, "to": 20000, "pop": null, "pb": "none", "c": "inferred", "src": ["durvasula2020", "hsieh2016"] }
+  ]
+}

@@ -33,10 +33,12 @@ form `vision-ml-demo` already uses. **`SWEEP OK` afterwards, and the sweep is wh
 proves it, not the intention.**
 
 > 🔴 **AND IT CAME BACK — which is the lesson worth keeping.** The rewrite fixes HISTORY; the git
-> config writes the NEXT commit. **`2d8746c` and `3591982` were authored
-> `the owner's git identity`** — this machine's user identity — so the address was back in
-> the published history **two commits after it had been purged from every earlier one**, and the
-> same two addresses were sitting in `DEPLOY-DAY.md` as well, in the paragraph describing the leak.
+> config writes the NEXT commit. **The deploy-day commit and the one after it were authored with a
+> personal address** — this machine's user identity — so the address was back in the published
+> history **two commits after it had been purged from every earlier one**, and the same two
+> addresses were sitting in `DEPLOY-DAY.md` as well, in the paragraph describing the leak.
+> *(Those commits are deliberately not cited by hash: the rewrite this describes replaced every
+> hash in the repository, so any hash written down here would be dead on arrival.)*
 > **The sweep caught it a second time, which is the sweep earning its keep.**
 >
 > The fix is `git config user.email` **set in the REPOSITORY**: a public repo's commits are then

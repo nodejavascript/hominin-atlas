@@ -865,6 +865,7 @@ p {
 
 .chart,
 .clashes,
+.lineage,
 .mixing,
 .honesty,
 .sources,
@@ -1026,100 +1027,411 @@ p {
   color: var(--muted);
 }
 
-/* ── the mixing diagram ─────────────────────────────────────────────────────── */
+/* ── the lineage chart ──────────────────────────────────────────────────────── */
 
 .note.warn {
   border-left: 2px solid var(--accent);
   padding-left: 12px;
 }
 
-.venn {
-  margin-top: 14px;
+.lineage-host {
+  margin-top: 16px;
 }
 
-.venn-svg {
-  display: block;
-  width: 100%;
-  max-width: 620px;
-  margin: 0 auto;
-  overflow: visible;
+.tree {
+  /* The label column, the row height and the gutter between them are read by
+     both the axis and every row, so a tick and the bar under it cannot drift
+     apart. The chart's overlay of branch lines starts at the same gutter.
+     The label width is set by the LONGEST date line ("1.90 million years ago →
+     108 thousand years ago"), because when one wraps the whole chart grows a
+     row taller and stops reading as a column of equal lines. */
+  --tree-label: 16rem;
+  --tree-gap: 12px;
+  --tree-row: 30px;
 }
 
-/* The circles are washed rather than solid, so the lenses read as the overlap of
-   two colours instead of as three shapes with hard edges. */
-.venn-circle {
-  fill-opacity: 0.14;
-  stroke-width: 1.6;
-  stroke-opacity: 0.85;
-  mix-blend-mode: screen;
+.tree-axis,
+.tree-row {
+  display: grid;
+  grid-template-columns: var(--tree-label) 1fr;
+  gap: var(--tree-gap);
 }
 
-.venn-name {
-  font-size: 15px;
-  fill: var(--text);
+.tree-axis {
+  margin-bottom: 4px;
 }
 
-.venn-count {
-  font-size: 21px;
-  font-weight: 650;
-  fill: var(--text);
+.tree-axistrack {
+  /* The second column. Without this the axis lands in the label column and is
+     drawn behind the names, 13rem wide, which reads as no axis at all. */
+  grid-column: 2;
+  position: relative;
+  height: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.venn-unit {
-  font-size: 11px;
-  letter-spacing: 0.06em;
+.tree-tick {
+  position: absolute;
+  bottom: 3px;
+  transform: translateX(-50%);
+  font-size: 10px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  fill: var(--muted);
+  color: var(--muted);
+  white-space: nowrap;
 }
 
-.venn-empty {
-  font-size: 10.5px;
-  fill: var(--muted);
-  opacity: 0.75;
+.tree-tick:first-child {
+  transform: translateX(-35%);
 }
 
-.mixlist {
+.tree-tick.is-now {
+  transform: translateX(-100%);
+  color: var(--yellow);
+}
+
+.tree-body {
+  position: relative;
+}
+
+.tree-rows {
   list-style: none;
-  margin: 20px 0 0;
+  margin: 0;
+  padding: 0;
+}
+
+.tree-row {
+  /* A minimum, not a fixed height. A name that wraps to two lines used to
+     overflow its row and run into the row below it, and the connectors are
+     measured from the laid-out rows, so a taller row is followed correctly. */
+  min-height: var(--tree-row);
+  align-items: center;
+}
+
+.tree-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tree-name:hover .tree-label i {
+  color: var(--accent-soft);
+}
+
+.tree-name > i:not(.sp) {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.tree-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 11.5px;
+  line-height: 1.25;
+}
+
+.tree-span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* Marks a lineage with no parent on the chart at all. */
+.tree-q {
+  flex: none;
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--card-line);
+  border-radius: 50%;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.tree-track {
+  position: relative;
+  height: var(--tree-row);
+}
+
+.tree-bar {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 3px;
+  height: 10px;
+  border-radius: 3px;
+  opacity: 0.85;
+}
+
+.tree-bar.is-extant {
+  opacity: 1;
+}
+
+.tree-row.is-unplaced .tree-bar {
+  opacity: 0.4;
+}
+
+/* The overlay the branch lines are drawn into. It is inset to the track column
+   exactly, so a line's horizontal position is a share of the track and never of
+   the whole chart. */
+.tree-links {
+  position: absolute;
+  inset: 0 0 0 calc(var(--tree-label) + var(--tree-gap));
+  pointer-events: none;
+}
+
+.tree-link {
+  position: absolute;
+  width: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.tree-link.is-contested {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.3) 0 4px,
+    rgba(255, 255, 255, 0) 4px 8px
+  );
+}
+
+.tree-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 18px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.tree-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tree-key .tree-link {
+  position: static;
+  width: 3px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.tree-key .tree-link.is-contested {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.6) 0 4px,
+    rgba(255, 255, 255, 0) 4px 8px
+  );
+}
+
+.tree-key .tree-q {
+  margin-left: 0;
+}
+
+.tree-note {
+  max-width: 78ch;
+  margin-top: 20px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #ded2c7;
+}
+
+.tree-note p {
+  margin: 0 0 10px;
+}
+
+.tree-note b {
+  color: var(--accent-soft);
+}
+
+.tree-detail {
+  margin-top: 18px;
+}
+
+.tree-detail summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--accent-soft);
+}
+
+.tree-branches {
+  list-style: none;
+  margin: 14px 0 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(286px, 1fr));
   gap: 9px;
 }
 
-.mix {
+.tree-branch {
   display: grid;
   gap: 3px;
-  width: 100%;
-  text-align: left;
-  font: inherit;
   padding: 11px 14px;
+  border: 1px solid var(--card-line);
+  border-left: 3px solid var(--muted);
+  border-radius: 10px;
+  background: var(--card);
+  font-size: 13px;
+}
+
+.tree-branch.is-secure {
+  border-left-color: var(--accent-soft);
+}
+
+.tree-branch-who {
+  font-weight: 600;
+}
+
+.tree-branch-c {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tree-branch-note {
+  max-width: 82ch;
+  line-height: 1.55;
+  color: #ded2c7;
+}
+
+.tree-branch-src {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.tree-unplaced {
+  max-width: 82ch;
+  margin: 12px 0 0;
+  padding: 13px 15px;
+  border: 1px solid var(--card-line);
+  border-left: 3px solid var(--muted);
+  border-radius: 10px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #ded2c7;
+}
+
+/* ── how much of the genome moved ───────────────────────────────────────────── */
+.mix-note {
+  max-width: 78ch;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #ded2c7;
+}
+
+.mix-note b {
+  color: var(--accent-soft);
+}
+
+.shares {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 9px;
+}
+
+.share-btn {
+  display: grid;
+  grid-template-columns: 10rem 1fr;
+  gap: 3px 14px;
+  width: 100%;
+  padding: 13px 15px;
   border: 1px solid var(--card-line);
   border-left: 3px solid var(--accent, var(--card-line));
   border-radius: 10px;
   background: var(--card);
   color: var(--text);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.mix:hover {
+.share-btn:hover {
   background: rgba(234, 88, 12, 0.09);
 }
 
-.mix-when {
+.share-head {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+}
+
+.share-fig {
+  font-size: 21px;
+  font-weight: 650;
+  line-height: 1.1;
+  color: var(--muted);
+}
+
+/* A figure that is really a figure is the one thing here that gets the accent —
+   and an arithmetic identity does not, because it is not an estimate of
+   anything. */
+.share.has-figure .share-fig {
+  color: var(--yellow);
+}
+
+.share.is-defined .share-fig {
+  color: var(--text);
+}
+
+.share-basis {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  /* The longest of these is "arithmetic, not an estimate". It wraps inside its
+     own column rather than widening it, because widening it squeezes the pair
+     of species on the right into a ribbon. */
+  overflow-wrap: anywhere;
+}
+
+.share-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.share-pair {
+  font-size: 13px;
+}
+
+.share-of {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.share-when {
   font-size: 11px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
-.mix b {
-  font-size: 14.5px;
-}
-
-.mix-who {
-  font-size: 12.5px;
-  color: var(--muted);
+.share-why {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--card-line);
+  max-width: 82ch;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #ded2c7;
 }
 
 .mix-ghost {
@@ -1429,6 +1741,57 @@ p {
 
   .hero {
     padding-top: 34px;
+  }
+
+  /* The chart at phone width is STACKED: the name takes the full width in its
+     own line and the track gets the full width beneath it. Side by side, at
+     this width, the names wrapped to three lines, the labels ran into each
+     other, and the track was too narrow for the bars to mean anything. Three
+     axis ticks are kept — eight overlapped each other completely — and the
+     section note carries the rest of the reading. */
+  .tree {
+    --tree-row: 0px;
+  }
+
+  .tree-axis,
+  .tree-row {
+    grid-template-columns: 1fr;
+  }
+
+  .tree-axistrack {
+    grid-column: 1;
+  }
+
+  .tree-row {
+    gap: 2px;
+    padding-bottom: 5px;
+  }
+
+  .tree-track {
+    height: 24px;
+  }
+
+  .tree-links {
+    inset: 0;
+  }
+
+  .tree-tick {
+    display: none;
+    font-size: 9px;
+  }
+
+  .tree-tick:first-child,
+  .tree-tick:nth-child(5),
+  .tree-tick.is-now {
+    display: block;
+  }
+
+  .shares {
+    grid-template-columns: 1fr;
+  }
+
+  .share-btn {
+    grid-template-columns: 7rem 1fr;
   }
 }
 

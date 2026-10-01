@@ -85,6 +85,34 @@ export type ContactKind =
   | 'overlap'
   | 'conflict';
 
+/**
+ * How a proportion was arrived at, which decides how it may be shown.
+ *
+ *   'published'  — a figure from the literature. Carries `lo` and/or `hi`.
+ *   'definition' — arithmetic that must be true of any such case (a
+ *                  first-generation child takes half from each parent).
+ *   'unnumbered' — published as a phrase and never estimated as a number.
+ *   'none'       — no share is published at all for this event.
+ *
+ * The last three exist so that a missing figure can be stated rather than
+ * guessed at. A share without a `basis` is not allowed to render.
+ */
+export type ShareBasis = 'published' | 'definition' | 'unnumbered' | 'none';
+
+export interface Share {
+  basis: ShareBasis;
+  /** The low end of a published range, where one is published. */
+  lo?: number | null;
+  /** The high end, or the single figure where only one is published. */
+  hi?: number | null;
+  /** Whose genome the figure is a share OF. */
+  of?: string;
+  /** The published wording, where the figure exists only as a phrase. */
+  phrase?: string;
+  /** Why there is no figure, in the case's own terms. */
+  why?: string;
+}
+
 export interface Contact {
   id: string;
   a: string;
@@ -98,7 +126,39 @@ export interface Contact {
   c: Confidence;
   evidence: string;
   result: string;
+  /** How much of the genome moved. Present only where genes moved at all. */
+  share?: Share;
   src: string[];
+}
+
+/**
+ * One branch of the lineage chart: who the line leaves, and who it leads to.
+ *
+ * `c` is the confidence in the BRANCHING, not in a date. 'secure' is drawn
+ * solid and anything else dashed, because a reader is entitled to see which
+ * parts of a family tree are being argued about.
+ */
+export interface LineageEdge {
+  parent: string;
+  child: string;
+  c: Confidence;
+  /** True for the edge that continues the line to Homo sapiens. */
+  trunk?: boolean;
+  note: string;
+  src: string[];
+}
+
+/** A lineage the record cannot place on the tree at all. */
+export interface Unplaced {
+  id: string;
+  why: string;
+  src: string[];
+}
+
+export interface Lineage {
+  _note: string;
+  edges: LineageEdge[];
+  unplaced: Unplaced[];
 }
 
 export interface Source {
@@ -138,6 +198,8 @@ export interface Atlas {
   sources: Map<string, Source>;
   /** The pictures, for the species that have one. See Face. */
   faces: Face[];
+  /** The branching order, for the lineage chart. See LineageEdge. */
+  lineage: Lineage;
   speciesById: Map<string, Species>;
   faceById: Map<string, Face>;
 }

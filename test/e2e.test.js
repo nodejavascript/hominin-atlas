@@ -874,41 +874,184 @@ test('an empty map at the young end states why it is empty', async () => {
   );
 });
 
-test('the mixing diagram draws the three lineages, counts its lenses, and lays the ghost note out as a sentence', async () => {
+test('the lineage chart draws every species, dashes the branches that are argued about, and leaves the unplaceable one detached', async () => {
+  await page.goto(BASE, { waitUntil: 'load' });
+  await sleep(900);
+  await page.locator('#lineage').scrollIntoViewIfNeeded();
+  await sleep(400);
+
+  const tree = page.locator('#lineage .tree');
+  assert.equal(await tree.count(), 1, 'the lineage chart did not render');
+
+  const species = JSON.parse(readFileSync(join(root, 'src', 'data', 'species.json'), 'utf8')).species;
+  const lineage = JSON.parse(readFileSync(join(root, 'src', 'data', 'lineage.json'), 'utf8'));
+
+  // One row per species. A chart that silently drops a lineage is the failure
+  // this catches — it would look perfectly correct.
+  assert.equal(
+    await tree.locator('.tree-row').count(),
+    species.length,
+    'the chart and the species list disagree about how many lineages there are',
+  );
+
+  // Every branch in the data is drawn, and the DASHED lines are exactly the
+  // contested ones — so the visual claim and the data cannot drift apart.
+  assert.equal(
+    await page.locator('#lineage .tree-links .tree-link').count(),
+    lineage.edges.length,
+    'the chart does not draw every branch in the data',
+  );
+  const contested = lineage.edges.filter((e) => e.c !== 'secure').length;
+  assert.equal(
+    await page.locator('#lineage .tree-links .tree-link.is-contested').count(),
+    contested,
+    'the dashed branches are not the contested branches',
+  );
+
+  // A branch line runs from the parent's row to the child's, so every one of
+  // them must have a length and sit inside the track. Zero-height lines are how
+  // a tree renders as a list of bars with nothing joining them.
+  const geoms = await page
+    .locator('#lineage .tree-links .tree-link')
+    .evaluateAll((els) =>
+      els.map((e) => ({ left: parseFloat(e.style.left), height: parseFloat(e.style.height) })),
+    );
+  assert.ok(geoms.length > 0, 'no branch geometry at all');
+  assert.ok(
+    geoms.every((g) => g.height > 0),
+    `a branch line has no length: ${JSON.stringify(geoms.filter((g) => !(g.height > 0)))}`,
+  );
+  assert.ok(
+    geoms.every((g) => g.left >= 0 && g.left <= 100),
+    'a branch line is positioned outside the track',
+  );
+
+  // The lineage with no fossil has no parent, and the chart must not give it one.
+  const hasParent = new Set(lineage.edges.map((e) => e.child));
+  for (const u of lineage.unplaced) {
+    assert.ok(!hasParent.has(u.id), `${u.id} is listed as unplaced and has an edge anyway`);
+    const row = page.locator(`#lineage .tree-row[data-species="${u.id}"]`);
+    assert.equal(await row.count(), 1, `${u.id} is not on the chart at all`);
+    assert.ok(
+      await row.evaluate((e) => e.classList.contains('is-unplaced')),
+      `${u.id} is drawn as though somebody knew where it goes`,
+    );
+  }
+
+  // Every row the same height. A label column too narrow for the longest date
+  // line makes ONE line wrap, and then every row grows — which does not collide
+  // or look broken, it just stops reading as a column of equal lines.
+  const heights = await page
+    .locator('#lineage .tree-row')
+    .evaluateAll((els) => [...new Set(els.map((e) => e.offsetHeight))]);
+  assert.equal(
+    heights.length,
+    1,
+    `the lineage rows are not all one line high: ${heights.join(', ')}`,
+  );
+
+  // Pressing a name opens that species, the way every other name on the page does.
+  await page.locator('#lineage .tree-row[data-species="sapiens"] .tree-name').click();
+  await sleep(250);
+  assert.match(
+    await page.textContent('#panel h3'),
+    /sapiens/,
+    'pressing a name on the lineage chart does not open the species',
+  );
+});
+
+test('a share of a genome is shown only where one is published, and the rest say why not', async () => {
   await page.goto(BASE, { waitUntil: 'load' });
   await sleep(900);
   await page.locator('#mixing').scrollIntoViewIfNeeded();
   await sleep(300);
 
-  const venn = page.locator('#venn');
-  // Three circles, named — and the names come from the data, not from the markup.
-  assert.equal(await venn.locator('svg circle').count(), 3, 'the Venn does not draw three lineages');
-  // textContent, not innerText: SVG elements have no innerText, and asking for it
-  // yields undefined for every one of them.
-  const labels = await venn.locator('svg text').allTextContents();
-  for (const name of ['Homo neanderthalensis', 'Homo denisova', 'Homo sapiens']) {
-    assert.ok(
-      labels.some((t) => t.includes(name)),
-      `the Venn does not name ${name}: ${labels.join(' | ')}`,
+  const contacts = JSON.parse(readFileSync(join(root, 'src', 'data', 'contacts.json'), 'utf8')).contacts;
+  const mixing = contacts.filter((c) => c.kind === 'admixture' || c.kind === 'hybrid');
+  assert.ok(mixing.length >= 5, `only ${mixing.length} mixing events to check`);
+
+  assert.equal(
+    await page.locator('#mixlist .share').count(),
+    mixing.length,
+    'the share list and the data disagree about how many events there are',
+  );
+
+  for (const c of mixing) {
+    const row = page.locator(`#mixlist .share[data-contact="${c.id}"]`);
+    assert.equal(await row.count(), 1, `${c.id} is missing from the share list`);
+    assert.equal(
+      await row.getAttribute('data-basis'),
+      c.share?.basis,
+      `${c.id} is grouped under a different basis from the one the data gives it`,
     );
+    const figure = (await row.locator('.share-fig').textContent()).trim();
+    if (c.share.basis === 'published' || c.share.basis === 'definition') {
+      // A real figure: a percentage, and it must be the one in the data.
+      assert.match(figure, /%/, `${c.id} has a published share and shows no percentage: ${figure}`);
+      const hi = c.share.hi;
+      if (hi !== null) {
+        assert.ok(
+          figure.includes(String(hi)),
+          `${c.id} shows ${figure} and the data says ${hi}`,
+        );
+      }
+      assert.ok(
+        await row.evaluate((e) => e.classList.contains('has-figure')),
+        `${c.id} has a figure and is not marked as one`,
+      );
+    } else {
+      // No figure. It must SAY so — a blank here would read as zero.
+      assert.ok(
+        !figure.includes('%'),
+        `${c.id} has no published share and shows a percentage anyway: ${figure}`,
+      );
+      const rowText = (await row.innerText()).replace(/\s+/g, ' ');
+      // Case-insensitively: innerText returns the RENDERED text, and the basis
+      // label is uppercased in CSS, so a lowercase pattern never matches it.
+      assert.match(
+        rowText,
+        /no share published|a phrase, not a figure/i,
+        `${c.id} says nothing at all where no share is published: ${rowText}`,
+      );
+      assert.match(
+        rowText,
+        /what is published|published only as|published evidence/i,
+        `${c.id} gives no figure and does not say what was published instead: ${rowText}`,
+      );
+    }
   }
 
-  // Every mixing event in the data is offered, and the lens counts add up to them.
-  const contacts = JSON.parse(
-    readFileSync(join(root, 'src', 'data', 'contacts.json'), 'utf8'),
-  ).contacts;
-  const mixing = contacts.filter((c) => c.kind === 'admixture' || c.kind === 'hybrid');
-  assert.equal(await venn.locator('.mix').count(), mixing.length, 'the mixing list and the data disagree');
+  // The headline sentence counts the data, rather than being a number somebody
+  // typed into the markup — and it promises a phrase-only row, so there has to
+  // be exactly one.
+  const intro = await page.textContent('#mixlist .mix-note');
+  const published = mixing.filter((c) => c.share?.basis === 'published').length;
+  const asPhrase = mixing.filter((c) => c.share?.basis === 'unnumbered').length;
+  assert.equal(asPhrase, 1, `the sentence promises one phrase-only row and there are ${asPhrase}`);
+  assert.match(
+    intro.replace(/\s+/g, ' '),
+    new RegExp(`published as a number for ${published} of them`),
+    `the sentence above the list disagrees with the data: ${intro}`,
+  );
+  assert.match(
+    await page.textContent('#mixing .note.warn'),
+    /only a few of these events/,
+    'the warning note has been given a count the data does not back',
+  );
 
-  // The ghost note: the dot, then ONE element holding the whole sentence. Split
-  // into flex items it rendered as columns, which is what this pins down.
-  const note = venn.locator('.mix-ghost');
+  // The lineage that exists only as genes is still explained, and still has no
+  // place on the chart.
+  const note = page.locator('#mixlist .mix-ghost');
   assert.equal(await note.count(), 1, 'the ghost lineage is not explained');
   const shape = await note.evaluate((el) => ({
     children: [...el.children].map((c) => c.tagName),
     text: el.innerText.replace(/\s+/g, ' '),
   }));
-  assert.deepEqual(shape.children, ['I', 'SPAN'], `the ghost note is laid out as separate boxes: ${shape.children.join(',')}`);
+  assert.deepEqual(
+    shape.children,
+    ['I', 'SPAN'],
+    `the ghost note is laid out as separate boxes: ${shape.children.join(',')}`,
+  );
   assert.match(shape.text, /found a bone of it: .* is known from/, 'the ghost note does not read as a sentence');
 });
 

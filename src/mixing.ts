@@ -1,183 +1,123 @@
 /**
- * mixing.ts — who mixed with whom, drawn from the contact record.
+ * mixing.ts — how much of the genome moved, and how sure anybody is.
  *
- * The three circles are the three lineages the record has mixing in every
- * direction: Neanderthals, Denisovans, and us. Each lens between a pair is
- * filled by the events that name that pair, and the middle is left blank because
- * nothing in the data names all three in one event.
+ * This is the part of the site where a number is most tempting and least
+ * available. A share of a genome has been published for three of the mixing
+ * events in this record and for no others, and one of those three is published
+ * as a phrase rather than a figure. So the share is DATA — `contacts[].share`,
+ * carrying a `basis` — and this file may not invent one. What it does instead:
  *
- * TWO THINGS THIS MUST NOT DO, and both are the reason it is code rather than a
- * picture somebody drew:
+ *   * a published figure is shown with the population it is a share OF, because
+ *     "1.5–2 percent" means nothing until you say whose genome it is a share of;
+ *   * where no share is published, the page SAYS SO and says what was published
+ *     instead — a number of generations, or the length of surviving segments —
+ *     because an empty box reads as zero;
+ *   * 'definition' is marked as such: one event has a share that is arithmetic
+ *     rather than an estimate, and it is the only exact number here.
  *
- *   * the circles are NOT to scale. They carry no quantity — not a population, not
- *     a percentage of ancestry, not a land area. They say which pairs mixed and
- *     nothing about how much, and the page has to say so, or a reader will read
- *     the overlap as a share of a genome.
- *   * every label is counted from `contacts`. A pair with no event gets no label,
- *     rather than a label somebody typed.
+ * THERE IS NO DIAGRAM ANY MORE. The circles that used to be here carried no
+ * quantity at all — which was the point of them — and a reader kept reading them
+ * as a share of a genome. A list of the figures, each beside the population it
+ * is a share of, cannot be misread that way.
  */
 
 import { atlas, formatYears } from './atlas';
 import { contactColour } from './palette';
-import type { Contact } from './types';
-
-/** The three lineages, and where each sits round the triangle. */
-const RING = [
-  { id: 'neanderthalensis', angle: -90 },
-  { id: 'denisova', angle: 30 },
-  { id: 'sapiens', angle: 150 },
-];
-
-const CENTRE = { x: 340, y: 300 };
-const SPREAD = 160;
-/**
- * The distance from the centroid to a centre, which for three equal circles is
- * also the radius that makes the three-way overlap a real region rather than a
- * point. Set here once, so the geometry cannot drift from the labels placed on
- * it.
- */
-const R = SPREAD;
+import type { Contact, Share } from './types';
 
 /** Kinds that mean genes moved. `overlap` and `coexistence` are not mixing. */
 const MIXING = new Set(['admixture', 'hybrid']);
 
-interface Spot {
-  x: number;
-  y: number;
+/** A share as a percentage, to one decimal only where it needs one. */
+function pct(n: number): string {
+  return `${Number.isInteger(n) ? n : n.toFixed(1)}%`;
 }
 
-function ringCentre(angleDeg: number): Spot {
-  const a = (angleDeg * Math.PI) / 180;
-  return { x: CENTRE.x + SPREAD * Math.cos(a), y: CENTRE.y + SPREAD * Math.sin(a) };
+/**
+ * The figure, as it may be shown. Every branch is decided by `basis`, so a share
+ * that was never published can never render as a number.
+ */
+export function shareText(s: Share | undefined): string {
+  if (!s) return '—';
+  if (s.basis === 'published') {
+    const lo = s.lo ?? null;
+    const hi = s.hi ?? null;
+    if (lo !== null && hi !== null) return lo === hi ? pct(hi) : `${pct(lo)}–${pct(hi)}`;
+    if (hi !== null) return `up to ${pct(hi)}`;
+    if (lo !== null) return `at least ${pct(lo)}`;
+    return '—';
+  }
+  if (s.basis === 'definition') return pct(s.hi ?? 50);
+  if (s.basis === 'unnumbered') return s.phrase ?? 'a few percent';
+  // A dash, not a sentence: the line under it already says no share is
+  // published, and printing the same words twice reads as a template.
+  return '—';
 }
 
-function middle(a: Spot, b: Spot): Spot {
-  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+/** What kind of number that is — printed under every figure, never omitted. */
+export function shareBasisNote(s: Share | undefined): string {
+  if (!s) return '';
+  if (s.basis === 'published') return 'published estimate';
+  if (s.basis === 'definition') return 'arithmetic, not an estimate';
+  if (s.basis === 'unnumbered') return 'a phrase, not a figure';
+  return 'no share published';
 }
 
-/** Out along the line from the middle of the diagram, into a circle's own lobe. */
-function outward(from: Spot, howFar: number): Spot {
-  const dx = from.x - CENTRE.x;
-  const dy = from.y - CENTRE.y;
-  const len = Math.hypot(dx, dy) || 1;
-  return { x: from.x + (dx / len) * howFar, y: from.y + (dy / len) * howFar };
-}
-
-const svgEl = (name: string): SVGElement =>
-  document.createElementNS('http://www.w3.org/2000/svg', name);
-
-function text(x: number, y: number, value: string, cls: string): SVGTextElement {
-  const node = svgEl('text') as SVGTextElement;
-  node.setAttribute('x', String(x));
-  node.setAttribute('y', String(y));
-  node.setAttribute('class', cls);
-  node.setAttribute('text-anchor', 'middle');
-  node.textContent = value;
-  return node;
+/** How many of the mixing events carry a figure, for the sentence above them. */
+export function countedShares(): { mixing: number; withFigure: number } {
+  const mixing = atlas.contacts.filter((c) => MIXING.has(c.kind));
+  return {
+    mixing: mixing.length,
+    withFigure: mixing.filter((c) => c.share?.basis === 'published').length,
+  };
 }
 
 export function renderMixing(host: HTMLElement, onOpen: (c: Contact) => void): void {
-  const centres = new Map<string, Spot>();
-  for (const ring of RING) centres.set(ring.id, ringCentre(ring.angle));
+  const mixing = atlas.contacts
+    .filter((c) => MIXING.has(c.kind))
+    .sort((x, y) => y.from - x.from);
+  const { withFigure } = countedShares();
 
-  const mixing = atlas.contacts.filter((c) => MIXING.has(c.kind));
-  const between = (a: string, b: string): Contact[] =>
-    mixing.filter((c) => (c.a === a && c.b === b) || (c.a === b && c.b === a));
+  host.textContent = '';
 
-  const svg = svgEl('svg') as SVGSVGElement;
-  svg.setAttribute('viewBox', '-10 -40 700 620');
-  svg.setAttribute('class', 'venn-svg');
-  svg.setAttribute('role', 'img');
-  svg.setAttribute(
-    'aria-label',
-    `A diagram, not to scale, of the lineages the record has mixing: ${RING.map(
-      (r) => atlas.speciesById.get(r.id)?.name ?? r.id,
-    ).join(', ')}. The list below names every dated event.`,
-  );
+  const intro = document.createElement('p');
+  intro.className = 'mix-note';
+  intro.innerHTML =
+    `Genes moved in <b>${mixing.length}</b> of the events on this site. A share of a genome has been ` +
+    `published as a number for <b>${withFigure}</b> of them, and for one more only as a phrase. ` +
+    `Where it has not been published at all, this says what was published instead — a number of ` +
+    `generations, or the length of surviving segments — because an empty box reads as zero.`;
+  host.appendChild(intro);
 
-  // ── the circles ─────────────────────────────────────────────────────────────
-  for (const ring of RING) {
-    const spot = centres.get(ring.id)!;
-    const species = atlas.speciesById.get(ring.id);
-    const circle = svgEl('circle');
-    circle.setAttribute('cx', String(spot.x));
-    circle.setAttribute('cy', String(spot.y));
-    circle.setAttribute('r', String(R));
-    circle.setAttribute('class', 'venn-circle');
-    circle.setAttribute('fill', species?.colour ?? '#888');
-    circle.setAttribute('stroke', species?.colour ?? '#888');
-    svg.appendChild(circle);
-  }
-
-  // ── the pair lenses ─────────────────────────────────────────────────────────
-  const pairs: [string, string][] = [
-    ['neanderthalensis', 'denisova'],
-    ['neanderthalensis', 'sapiens'],
-    ['denisova', 'sapiens'],
-  ];
-  for (const [a, b] of pairs) {
-    const spot = middle(centres.get(a)!, centres.get(b)!);
-    const events = between(a, b);
-    // The lens is slightly nearer the middle of the picture than the midpoint of
-    // the two centres, which is where the label reads as belonging to both.
-    const label = { x: spot.x + (CENTRE.x - spot.x) * 0.22, y: spot.y + (CENTRE.y - spot.y) * 0.22 };
-    if (events.length === 0) {
-      svg.appendChild(text(label.x, label.y, 'no event', 'venn-empty'));
-      continue;
-    }
-    svg.appendChild(
-      text(label.x, label.y - 6, `${events.length}`, 'venn-count'),
-    );
-    svg.appendChild(
-      text(
-        label.x,
-        label.y + 13,
-        events.length === 1 ? 'dated event' : 'dated events',
-        'venn-unit',
-      ),
-    );
-  }
-
-  // ── the middle is left empty on purpose ─────────────────────────────────────
-  // Nothing in the record names all three lineages in one event, so there is no
-  // label to draw. A caption here would collide with the three lenses and would
-  // also be a label the data did not put there; the sentence above the diagram
-  // says why the space is blank.
-
-  // ── each circle names its own lineage, in its own lobe ──────────────────────
-  for (const ring of RING) {
-    const spot = centres.get(ring.id)!;
-    const label = outward(spot, R * 0.56);
-    const species = atlas.speciesById.get(ring.id);
-    const name = svgEl('text') as SVGTextElement;
-    name.setAttribute('x', String(label.x));
-    name.setAttribute('y', String(label.y));
-    name.setAttribute('class', 'venn-name');
-    name.setAttribute('text-anchor', 'middle');
-    const italic = svgEl('tspan') as SVGTSpanElement;
-    italic.setAttribute('class', 'sp');
-    italic.textContent = species?.name ?? ring.id;
-    name.appendChild(italic);
-    svg.appendChild(name);
-  }
-
-  host.appendChild(svg);
-
-  // ── every dated event, under the diagram ────────────────────────────────────
   const list = document.createElement('ul');
-  list.className = 'mixlist';
-  for (const c of mixing.slice().sort((x, y) => y.from - x.from)) {
+  list.className = 'shares';
+
+  for (const c of mixing) {
     const a = atlas.speciesById.get(c.a);
     const b = atlas.speciesById.get(c.b);
+    const s = c.share;
+    const figure = s?.basis === 'published' || s?.basis === 'definition';
     const item = document.createElement('li');
+    item.className =
+      'share' + (figure ? ' has-figure' : '') + (s?.basis === 'definition' ? ' is-defined' : '');
+    item.dataset.contact = c.id;
+    item.dataset.basis = s?.basis ?? 'none';
+    item.style.setProperty('--accent', contactColour(c.kind));
+
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'mix';
-    button.style.setProperty('--accent', contactColour(c.kind));
+    button.className = 'share-btn';
     button.innerHTML =
-      `<span class="mix-when">${esc(formatYears(c.from))}</span>` +
-      `<b>${esc(c.label)}</b>` +
-      `<span class="mix-who"><i class="sp">${esc(a?.name ?? c.a)}</i> × <i class="sp">${esc(b?.name ?? c.b)}</i></span>`;
+      `<span class="share-head">` +
+      `<span class="share-fig">${esc(shareText(s))}</span>` +
+      `<span class="share-basis">${esc(shareBasisNote(s))}</span>` +
+      `</span>` +
+      `<span class="share-body">` +
+      `<span class="share-pair"><i class="sp">${esc(a?.name ?? c.a)}</i> × <i class="sp">${esc(b?.name ?? c.b)}</i></span>` +
+      `<span class="share-of">${s?.of ? `share of ${esc(s.of)}` : esc(c.label)}</span>` +
+      `<span class="share-when">${esc(formatYears(c.from))}</span>` +
+      `</span>` +
+      (s?.why ? `<span class="share-why">${esc(s.why)}</span>` : '');
     button.addEventListener('click', () => onOpen(c));
     item.appendChild(button);
     list.appendChild(item);
@@ -185,19 +125,22 @@ export function renderMixing(host: HTMLElement, onOpen: (c: Contact) => void): v
   host.appendChild(list);
 
   // ── the lineage that exists only as genes ───────────────────────────────────
+  // It appears in the list above like any other mixing event, and it is called
+  // out here because a reader who has just been shown a family tree will go
+  // looking for it on one, and it is not there.
   const ghost = atlas.speciesById.get('ghost_archaic_wa');
   const ghostEvents = mixing.filter((c) => c.a === 'ghost_archaic_wa' || c.b === 'ghost_archaic_wa');
   if (ghost && ghostEvents.length) {
+    const spans = ghostEvents.map((c) => `${formatYears(c.from)} to ${formatYears(c.to)}`).join(', ');
     const note = document.createElement('p');
     note.className = 'mix-ghost';
-    const spans = ghostEvents.map((c) => `${formatYears(c.from)} to ${formatYears(c.to)}`).join(', ');
     // The dot and the sentence are the only two children, and the sentence is ONE
     // element. This container is a flex row, so every bare text node and every
-    // <i> becomes its own flex item — which laid the four fragments of this
+    // <i> becomes its own flex item — which once laid the fragments of this
     // sentence out side by side, as though they were columns.
     note.innerHTML =
       `<i style="background:${esc(ghost.colour)}"></i>` +
-      `<span>There is a fourth lineage in the record and it has no circle here, because nobody has ever found a bone of it: ` +
+      `<span>There is a fourth lineage in the record and it has no place on the family tree, because nobody has ever found a bone of it: ` +
       `<i class="sp">${esc(ghost.name)}</i> is known from ${esc(ghostEvents.length === 1 ? 'a single event' : `${ghostEvents.length} events`)} in which its genes entered ours, dated ${esc(spans)}. ` +
       `It is drawn on the map as a hollow dot for the same reason.</span>`;
     host.appendChild(note);

@@ -14,7 +14,17 @@ import routesJson from './data/routes.json';
 import contactsJson from './data/contacts.json';
 import sourcesJson from './data/sources.json';
 import facesJson from './data/faces.json';
-import type { Atlas, Contact, Face, Presence, Route, Source, Species } from './types';
+import lineageJson from './data/lineage.json';
+import type {
+  Atlas,
+  Contact,
+  Face,
+  Lineage,
+  Presence,
+  Route,
+  Source,
+  Species,
+} from './types';
 
 export const atlas: Atlas = (() => {
   const species = speciesJson.species as unknown as Species[];
@@ -25,6 +35,7 @@ export const atlas: Atlas = (() => {
     (sourcesJson.sources as unknown as Source[]).map((s) => [s.key, s]),
   );
   const faces = facesJson.faces as unknown as Face[];
+  const lineage = lineageJson as unknown as Lineage;
   return {
     species,
     presences,
@@ -32,6 +43,7 @@ export const atlas: Atlas = (() => {
     contacts,
     sources,
     faces,
+    lineage,
     speciesById: new Map(species.map((s) => [s.id, s])),
     faceById: new Map(faces.map((f) => [f.id, f])),
   };

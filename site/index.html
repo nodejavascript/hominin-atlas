@@ -245,20 +245,28 @@
         <div class="contacts" id="contacts"></div>
       </section>
 
-      <section class="mixing" id="mixing" aria-label="Mixing between lineages">
-        <h2>Who mixed with whom</h2>
+      <section class="lineage" id="lineage-sec" aria-label="Lineage chart">
+        <h2>Who is related to whom</h2>
         <p class="note">
-          The three circles are the lineages the record has mixing in every
-          direction. Each lens is filled by the dated events that name that pair;
-          the middle is empty because no single event names all three. Press an
-          event to open it.
+          The same twenty-three species, hung on one family tree. A line leaves
+          its parent where the descendant is <b>first seen in the record</b> — not
+          at a genetic split, which is a different and usually earlier thing. A
+          branch the literature is still arguing about is drawn dashed. Press a
+          name to open it.
         </p>
+        <div class="lineage-host" id="lineage"></div>
+      </section>
+
+      <section class="mixing" id="mixing" aria-label="Shared ancestry between lineages">
+        <h2>How much of the genome moved</h2>
         <p class="note warn">
-          The circles are <b>not to scale</b>. They carry no quantity — not a
-          population, not a land area, and above all <b>not a share of a
-          genome</b>. They say which pairs mixed, and nothing about how much.
+          A share of a genome has been published for only a few of these events,
+          and one of those is published as a phrase rather than a figure. So each
+          row carries <b>what kind of number it is</b>, and where there is
+          nothing to show, it says so instead of showing a zero. Press a row to
+          open the event.
         </p>
-        <div class="venn" id="venn"></div>
+        <div class="shares-host" id="mixlist"></div>
       </section>
 
       <section class="honesty" id="honesty">

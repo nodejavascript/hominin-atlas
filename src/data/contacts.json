@@ -15,6 +15,7 @@
       "c": "secure",
       "evidence": "Neanderthal genome sequences from Vindija and the Altai compared against living genomes; the length and distribution of surviving Neanderthal segments date the mixing to roughly 50,000–60,000 years ago.",
       "result": "Every living person whose ancestry lies outside sub-Saharan Africa carries about 1.5–2 percent Neanderthal DNA. It is not a trace — it is in the genome of most of the people alive today.",
+      "share": { "basis": "published", "lo": 1.5, "hi": 2, "of": "every living person whose ancestry lies outside sub-Saharan Africa" },
       "src": ["green2010", "prufer2017"]
     },
     {
@@ -30,6 +31,7 @@
       "c": "secure",
       "evidence": "A Denisovan genome from a finger bone, compared against living Papuan and Aboriginal Australian genomes, which carry segments found in no other living population.",
       "result": "Up to about 5 percent Denisovan ancestry in Papuans and other Oceanian populations — the largest contribution from any archaic hominin known, and the reason a finger bone from Siberia changed the prehistory of New Guinea.",
+      "share": { "basis": "published", "lo": null, "hi": 5, "of": "Papuans and other Oceanian populations" },
       "src": ["reich2010"]
     },
     {
@@ -45,6 +47,7 @@
       "c": "dated",
       "evidence": "A single bone fragment from Denisova Cave, Denisova 11, whose genome carries one Neanderthal chromosome set and one Denisovan set: its mother was a Neanderthal and its father a Denisovan.",
       "result": "Direct proof that the two populations met and had children — from one broken bone. It is also the only first-generation hybrid between any two hominins that has ever been identified.",
+      "share": { "basis": "definition", "lo": 50, "hi": 50, "of": "this one individual", "why": "A first-generation child of two species takes half of its genome from each parent. That is arithmetic, not a published estimate — and it is the only case here where the share is known exactly." },
       "src": ["slon2018"]
     },
     {
@@ -60,6 +63,7 @@
       "c": "inferred",
       "evidence": "Statistical models fitted to whole genomes from Yoruba, Mende and other West African populations, which carry ancestry that matches neither modern humans nor any known archaic genome.",
       "result": "A few percent of the ancestry of some West African populations comes from a hominin that has never been found. There is no fossil, no site and no name — only the signal.",
+      "share": { "basis": "unnumbered", "lo": null, "hi": null, "of": "some West African populations", "phrase": "a few percent", "why": "Published only as \"a few percent\". No single figure has been estimated for this signal, so none is shown." },
       "src": ["durvasula2020", "hsieh2016"]
     },
     {
@@ -75,6 +79,7 @@
       "c": "dated",
       "evidence": "Oase 1, from Peştera cu Oase in Romania, has Neanderthal segments so long that the ancestor they came from was only four to six generations back.",
       "result": "One individual, one family tree, and the clearest single piece of evidence that the mixing was not a single ancient event in the Levant but happened repeatedly, including in Europe, within living memory of the people involved.",
+      "share": { "basis": "none", "why": "The published evidence for this individual is a number of GENERATIONS — four to six — not a share of the genome. No share is published for him, so none is shown." },
       "src": ["fu2015"]
     },
     {
@@ -90,6 +95,7 @@
       "c": "dated",
       "evidence": "Genomes from Bacho Kiro Cave in Bulgaria, among the earliest Homo sapiens in Europe, all carry recent Neanderthal ancestry — and none of those lineages survives in living Europeans.",
       "result": "The first modern humans in Europe mixed with Neanderthals and then died out or were replaced. The people who are the ancestors of later Europeans are a different, later arrival.",
+      "share": { "basis": "none", "why": "What is published for these individuals is the LENGTH of the surviving segments, which is how the mixing is dated. No share of the genome is published, so none is shown." },
       "src": ["hublin2020", "hajdinjak2021"]
     },
     {
@@ -135,6 +141,7 @@
       "c": "dated",
       "evidence": "The Ust'-Ishim femur from western Siberia has long Neanderthal segments that place the mixing event a few thousand years before he lived, and he has no Denisovan ancestry at all.",
       "result": "Long segments mean recent mixing, and the technique turns a single bone into a date for an event nobody witnessed. Modern humans reached Siberia and mixed with Neanderthals there.",
+      "share": { "basis": "none", "why": "What is published is segment length, which turns the bone into a date — about 45,000 years ago. No share of the genome is published, so none is shown." },
       "src": ["fu2014"]
     },
     {

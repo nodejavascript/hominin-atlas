@@ -35,6 +35,7 @@ import {
 import { createFlatMap } from './flatmap';
 import { createGlobe } from './globe';
 import { renderMixing } from './mixing';
+import { renderLineage } from './lineage';
 import { contactColour } from './palette';
 import type { Contact, MapViewApi, Presence, Selection, Species } from './types';
 
@@ -451,14 +452,24 @@ function contactRow(c: Contact): HTMLButtonElement {
 
 for (const c of atlas.contacts) contactsHost?.appendChild(contactRow(c));
 
-// The mixing diagram is drawn from the same contacts the list above is, so the
-// two cannot say different things about who met whom.
-const vennHost = el<HTMLDivElement>('venn');
-if (vennHost) {
-  renderMixing(vennHost, (c) => {
+// The lineage chart is drawn from the same record the map is, and a name on it
+// opens that species the way a name anywhere else on the page does.
+const lineageHost = el<HTMLDivElement>('lineage');
+if (lineageHost) {
+  renderLineage(lineageHost, (s) => {
+    showSpecies(s);
+    track('species_open', { species: s.id, from: 'lineage' });
+  });
+}
+
+// The share figures are drawn from the same contacts the list above is, so the
+// two cannot say different things about who met whom, or about how much moved.
+const mixHost = el<HTMLDivElement>('mixlist');
+if (mixHost) {
+  renderMixing(mixHost, (c) => {
     map.focusOn(c.lat, c.lon);
     showSelection({ kind: 'contact', contact: c });
-    track('contact_open', { contact: c.id, kind: c.kind, from: 'venn' });
+    track('contact_open', { contact: c.id, kind: c.kind, from: 'shares' });
   });
 }
 

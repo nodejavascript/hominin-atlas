@@ -1,0 +1,169 @@
+{
+  "_note": "The branching order the lineage chart draws. READ THIS BEFORE TRUSTING IT: a tree is a reading of the literature, not a measurement, and this one is drawn differently from the usual wall chart in two ways. First, a branch leaves its parent at the date the descendant is FIRST SEEN IN THE RECORD — the numbers are already on this map with their sources — and not at a molecular divergence date, which is a different and usually earlier thing. Second, every edge carries how settled it is: 'secure' where the fossils and the dates agree, 'contested' where the literature is arguing, and a contested edge is drawn dashed. A lineage whose position genuinely cannot be drawn is listed in `unplaced` and floats free rather than being given a parent it has not got.",
+  "edges": [
+    {
+      "parent": "ardipithecus",
+      "child": "anamensis",
+      "c": "contested",
+      "src": ["white2009", "haile2019"],
+      "note": "Ardipithecus is the oldest hominin known from a skeleton, and whether it is ancestral to Australopithecus or a sister lineage that left no descendants is argued."
+    },
+    {
+      "parent": "anamensis",
+      "child": "afarensis",
+      "c": "secure",
+      "trunk": true,
+      "src": ["haile2019", "kimbel1994"],
+      "note": "The 3.8-million-year-old Woranso-Mille cranium sits between the two, in time and in form, and is read as showing one evolving lineage rather than two."
+    },
+    {
+      "parent": "afarensis",
+      "child": "africanus",
+      "c": "contested",
+      "trunk": true,
+      "src": ["kimbel1994", "clarke2019"],
+      "note": "The South African australopiths come after the east African ones. Which east African species they descend from — or whether the two are one variable species — is not settled."
+    },
+    {
+      "parent": "africanus",
+      "child": "sediba",
+      "c": "contested",
+      "src": ["berger2010", "pickering2011"],
+      "note": "A mosaic of australopith feet and Homo-like hips and teeth, and its authors argue it sits close to the ancestry of Homo. Others read it as a late australopith side branch."
+    },
+    {
+      "parent": "africanus",
+      "child": "robustus",
+      "c": "contested",
+      "src": ["brain1950", "wood2011"],
+      "note": "The heavy-jawed side branch, off an australopith and not off Homo. This is the clearest case on the chart of a lineage that is not our ancestor."
+    },
+    {
+      "parent": "africanus",
+      "child": "boisei",
+      "c": "contested",
+      "src": ["leakey1959", "wood2011"],
+      "note": "The eastern heavy-jawed form, a sister to the South African one rather than its descendant — boisei is the older of the two, which on its own rules out the other reading. Fifty years of evidence reads the two as one radiation off an australopith."
+    },
+    {
+      "parent": "africanus",
+      "child": "homo_early",
+      "c": "contested",
+      "trunk": true,
+      "src": ["dart1925", "harmand2015"],
+      "note": "The stone tools at Lomekwi are 3.3 million years old — older than any fossil that can be placed in the genus. The earlier Homo record here is a category, not a species, and its ancestor is unknown."
+    },
+    {
+      "parent": "homo_early",
+      "child": "habilis",
+      "c": "contested",
+      "trunk": true,
+      "src": ["spoor2015", "leakey1964"],
+      "note": "OH 7 was reconstructed and found to be more primitive than the flat reconstruction had suggested, and the authors conclude the early genus was several species rather than one."
+    },
+    {
+      "parent": "habilis",
+      "child": "ergaster",
+      "c": "contested",
+      "trunk": true,
+      "src": ["spoor2015", "walker1985"],
+      "note": "The Turkana Boy is the first clearly modern body plan in the record. Whether it descends from habilis or from something not yet named is open."
+    },
+    {
+      "parent": "ergaster",
+      "child": "erectus",
+      "c": "secure",
+      "trunk": true,
+      "src": ["walker1985", "lordkipanidze2013"],
+      "note": "The African and Georgian fossils are read either as one widespread species or as a grade of form that keeps the name. Either way the line runs on through here."
+    },
+    {
+      "parent": "erectus",
+      "child": "floresiensis",
+      "c": "contested",
+      "src": ["brown2004", "brumm2016"],
+      "note": "A metre-tall hominin on an island, from about 700,000 years ago — which means an early arrival, on a water crossing, before anyone thought it happened."
+    },
+    {
+      "parent": "erectus",
+      "child": "luzonensis",
+      "c": "contested",
+      "src": ["detroit2019"],
+      "note": "A second island hominin, on Luzon, known from hand and foot bones unlike any other species. Its ancestor reached an island it could not have walked to."
+    },
+    {
+      "parent": "erectus",
+      "child": "longi",
+      "c": "contested",
+      "src": ["ni2021", "ji2021"],
+      "note": "The Harbin cranium's affinities are argued: its authors put it closer to sapiens than to Neanderthals, and that reading is disputed."
+    },
+    {
+      "parent": "erectus",
+      "child": "nesher_ramla",
+      "c": "contested",
+      "src": ["hershkovitz2021"],
+      "note": "A Levantine archaic population with tools like those of the sapiens beside it, argued by its authors to be ancestral to Neanderthals."
+    },
+    {
+      "parent": "erectus",
+      "child": "naledi",
+      "c": "contested",
+      "src": ["berger2015", "dirks2017"],
+      "note": "A small-brained Homo with a modern foot and hand, dated to a time when such a brain should be long gone. Where it belongs is the argument its discovery started."
+    },
+    {
+      "parent": "erectus",
+      "child": "antecessor",
+      "c": "contested",
+      "trunk": true,
+      "src": ["carbonell1995", "welker2020"],
+      "note": "The oldest securely dated European human, at Gran Dolina — with cut marks on a child's bones. Its dental proteome ties it into the later European lineage."
+    },
+    {
+      "parent": "antecessor",
+      "child": "heidelbergensis",
+      "c": "contested",
+      "trunk": true,
+      "src": ["arsuaga2014", "meyer2016"],
+      "note": "Sima de los Huesos is read as the root of the Neanderthal line — and its DNA has been read both ways since."
+    },
+    {
+      "parent": "heidelbergensis",
+      "child": "neanderthalensis",
+      "c": "secure",
+      "src": ["prufer2014", "arsuaga2014"],
+      "note": "The Neanderthal genome from the Altai and the Sima de los Huesos fossils agree: this is one lineage, in Europe, for 350,000 years."
+    },
+    {
+      "parent": "heidelbergensis",
+      "child": "denisova",
+      "c": "contested",
+      "src": ["reich2010", "slon2018"],
+      "note": "Neanderthals and Denisovans are sister lineages. They are drawn from the same branch here because Denisova 11 is the child of a Neanderthal mother and a Denisovan father — the two had not yet separated in practice."
+    },
+    {
+      "parent": "erectus",
+      "child": "rhodesiensis",
+      "c": "contested",
+      "trunk": true,
+      "src": ["rizal2020", "white2003b"],
+      "note": "An African Middle Pleistocene form, from Bodo and Kabwe, read by many as the ancestor of sapiens and by others as a separate species that left none."
+    },
+    {
+      "parent": "rhodesiensis",
+      "child": "sapiens",
+      "c": "contested",
+      "trunk": true,
+      "src": ["white2003b", "hublin2017"],
+      "note": "A pan-African origin: the oldest sapiens fossils are in Morocco and Ethiopia, 5,000 km apart and within 15,000 years of each other, so there is no single cradle."
+    }
+  ],
+  "unplaced": [
+    {
+      "id": "ghost_archaic_wa",
+      "why": "No fossil, no site and no name. This population is known only from a statistical signal in living West African genomes, so it cannot have a parent drawn on a chart — only the fact that it mixed with Homo sapiens.",
+      "src": ["durvasula2020", "hsieh2016"]
+    }
+  ]
+}

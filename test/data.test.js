@@ -271,3 +271,148 @@ test('no two species are shown by the same picture', () => {
     seen.set(f.file_on_commons, f.id);
   }
 });
+
+// ── the lineage chart ────────────────────────────────────────────────────────
+
+const lineage = data('lineage.json');
+
+test('every branch names species that exist, and carries the note and the citation that justify it', () => {
+  assert.ok(lineage.edges.length >= 15, `only ${lineage.edges.length} branches`);
+  for (const e of lineage.edges) {
+    assert.ok(byId.has(e.parent), `${e.child} branches from ${e.parent}, which is not a species`);
+    assert.ok(byId.has(e.child), `${e.parent} branches to ${e.child}, which is not a species`);
+    assert.notEqual(e.parent, e.child, `${e.child} branches from itself`);
+    assert.ok(['dated', 'secure', 'contested', 'inferred'].includes(e.c), `${e.parent}→${e.child} has confidence "${e.c}"`);
+    assert.ok(e.note.length > 40, `${e.parent}→${e.child} has no note worth reading`);
+    assert.ok(e.src.length > 0, `${e.parent}→${e.child} cites nothing`);
+    for (const k of e.src) {
+      assert.ok(sourceKeys.has(k), `${e.parent}→${e.child} cites ${k}, which is not in sources.json`);
+    }
+  }
+});
+
+test('the branching order is a tree — one root, no cycle, and every species on it exactly once', () => {
+  const children = new Set(lineage.edges.map((e) => e.child));
+  const parents = new Set(lineage.edges.map((e) => e.parent));
+  const roots = [...parents].filter((p) => !children.has(p));
+  assert.equal(roots.length, 1, `a tree has one root and this has ${roots.length}: ${roots.join(', ')}`);
+
+  const twice = [...children].filter((c) => lineage.edges.filter((e) => e.child === c).length > 1);
+  assert.deepEqual(twice, [], 'a lineage is drawn as the descendant of more than one ancestor');
+
+  // Walk it. A cycle would send this round for ever, so it walks with a bound.
+  const parentOf = new Map(lineage.edges.map((e) => [e.child, e.parent]));
+  for (const id of children) {
+    const seen = [id];
+    let at = parentOf.get(id);
+    while (at !== undefined) {
+      assert.ok(seen.length < lineage.edges.length + 1, `the tree has a cycle through ${id}`);
+      assert.ok(!seen.includes(at), `the tree has a cycle: ${[...seen, at].join(' → ')}`);
+      seen.push(at);
+      at = parentOf.get(at);
+    }
+    assert.equal(seen[seen.length - 1], roots[0], `${id} does not lead back to the root`);
+  }
+
+  // Every species is either on the tree or named as one that cannot be placed.
+  const unplaced = new Set(lineage.unplaced.map((u) => u.id));
+  for (const s of species) {
+    assert.ok(
+      children.has(s.id) || parents.has(s.id) || unplaced.has(s.id),
+      `${s.id} is in the dataset and neither on the chart nor listed as unplaceable`,
+    );
+  }
+});
+
+test('no lineage appears before the lineage it branches from', () => {
+  // This is the invariant that caught a real mistake: Paranthropus boisei was
+  // drawn as descending from P. robustus, and boisei's first appearance is
+  // 300,000 years OLDER than robustus's. The dates themselves disproved the
+  // arrangement, and the two are sisters rather than parent and child.
+  for (const e of lineage.edges) {
+    const parent = byId.get(e.parent);
+    const child = byId.get(e.child);
+    assert.ok(
+      child.from <= parent.from,
+      `${e.child} first appears ${(child.from - parent.from) / 1000}ky BEFORE its parent ${e.parent}`,
+    );
+  }
+});
+
+test('a lineage with no fossil is given no parent, and is explained instead', () => {
+  assert.ok(lineage.unplaced.length >= 1, 'nothing is listed as unplaceable, so the chart is claiming more than it knows');
+  for (const u of lineage.unplaced) {
+    assert.ok(byId.has(u.id), `${u.id} is unplaceable and is not a species`);
+    assert.ok(
+      !lineage.edges.some((e) => e.child === u.id),
+      `${u.id} is listed as unplaceable and has a parent drawn for it anyway`,
+    );
+    assert.ok(u.why.length > 40, `${u.id} has no reason given for being off the tree`);
+    for (const k of u.src) {
+      assert.ok(sourceKeys.has(k), `${u.id} cites ${k}, which is not in sources.json`);
+    }
+  }
+});
+
+// ── how much of the genome moved ─────────────────────────────────────────────
+
+const MIXING_KINDS = new Set(['admixture', 'hybrid']);
+const SHARE_BASES = new Set(['published', 'definition', 'unnumbered', 'none']);
+
+test('a share of a genome is carried only where genes moved, and it says what kind of number it is', () => {
+  for (const c of contacts) {
+    const mixing = MIXING_KINDS.has(c.kind);
+    if (mixing) {
+      assert.ok(c.share, `${c.id} moved genes and carries no share`);
+    } else {
+      assert.equal(c.share, undefined, `${c.id} is a ${c.kind} and carries a share of a genome`);
+    }
+    if (!c.share) continue;
+
+    assert.ok(SHARE_BASES.has(c.share.basis), `${c.id} has share basis "${c.share.basis}"`);
+    if (c.share.basis === 'published' || c.share.basis === 'definition') {
+      // A real figure. It must have a number AND the population it is a share of,
+      // because a percentage on its own is not a fact about anybody.
+      assert.ok(
+        typeof c.share.lo === 'number' || typeof c.share.hi === 'number',
+        `${c.id} says its share is published and gives no figure`,
+      );
+      assert.ok(c.share.of, `${c.id} gives a figure and does not say whose genome it is a share of`);
+    } else {
+      // No figure. It must say WHY, or a reader will take the blank for a zero.
+      assert.ok(c.share.why && c.share.why.length > 40, `${c.id} has no share and no explanation`);
+      assert.equal(c.share.lo ?? null, null, `${c.id} has basis "${c.share.basis}" and a low figure`);
+      if (c.share.basis === 'none') {
+        assert.equal(c.share.hi ?? null, null, `${c.id} has basis "none" and a high figure`);
+      }
+      if (c.share.basis === 'unnumbered') {
+        assert.ok(c.share.phrase, `${c.id} says its share was published as a phrase and does not quote it`);
+      }
+    }
+  }
+});
+
+test('the figures that are shown are the ones the literature published, and no more of them than that', () => {
+  const mixing = contacts.filter((c) => MIXING_KINDS.has(c.kind));
+  const published = mixing.filter((c) => c.share.basis === 'published');
+  // Three is the real number. If this ever rises, somebody has found new
+  // evidence or somebody has invented a figure, and the two look identical in a
+  // diff — so it is asserted rather than assumed.
+  assert.ok(
+    published.length <= mixing.length,
+    'more published shares than mixing events',
+  );
+  for (const c of published) {
+    if (c.share.lo !== null && c.share.hi !== null) {
+      assert.ok(c.share.hi >= c.share.lo, `${c.id} publishes a range that runs backwards`);
+    }
+    assert.ok(c.share.hi <= 100, `${c.id} publishes a share above 100 per cent`);
+  }
+  // And the ones with no figure are the majority, which is the honest position:
+  // a share of a genome has been published for very few of these events.
+  const withoutFigure = mixing.filter((c) => c.share.basis !== 'published' && c.share.basis !== 'definition');
+  assert.ok(
+    withoutFigure.length >= published.length,
+    'the page presents more figures than the record holds',
+  );
+});
